@@ -1,7 +1,7 @@
-import { BinaryAST } from '.';
-import { VariableAST } from '.';
-import { ArrayAccessAST } from '.';
-import { AST } from '.';
+import BinaryAST from './BinaryAST';
+import VariableAST from './VariableAST';
+import ArrayAccessAST from './ArrayAccessAST';
+import AST from './AST';
 
 export default class AssignmentAST extends BinaryAST {
   constructor(

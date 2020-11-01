@@ -1,14 +1,14 @@
 {
-  "name": "@pascal-psi/symbol",
-  "version": "0.0.2",
-  "description": "PSI symbols",
+  "name": "@glossa-glo/symbol",
+  "version": "1.0.0-beta",
+  "description": "GLO symbols",
   "author": "komninoschat <komninoschat@gmail.com>",
-  "homepage": "https://github.com/komninoschat/psi#readme",
+  "homepage": "https://github.com/komninoschat/glo#readme",
   "publishConfig": {
     "access": "public"
   },
   "license": "MIT",
-  "main": "lib/PSISymbol.js",
+  "main": "lib/GLOSymbol.js",
   "directories": {
     "lib": "lib",
     "test": "__tests__"
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/komninoschat/psi.git"
+    "url": "git+https://github.com/komninoschat/glo.git"
   },
   "scripts": {
     "prepare": "tsc",
@@ -26,12 +26,13 @@
     "test-cover": "cross-env NODE_ENV=development nyc mocha \"./__tests__/**/*.test.ts\" -- --opts=__tests__/mocha.opts"
   },
   "bugs": {
-    "url": "https://github.com/komninoschat/psi/issues"
+    "url": "https://github.com/komninoschat/glo/issues"
   },
   "dependencies": {
-    "@pascal-psi/case-insensitive-map": "^0.0.2",
-    "@pascal-psi/data-types": "^0.0.2",
-    "@pascal-psi/error": "^0.0.2"
+    "@glossa-glo/case-insensitive-map": "^1.0.0-beta",
+    "@glossa-glo/data-types": "^1.0.0-beta",
+    "@glossa-glo/error": "^1.0.0-beta",
+    "@glossa-glo/ast": "^1.0.0-beta"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",

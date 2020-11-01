@@ -7,12 +7,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test.pas",
+      "name": "test.glo",
       "program": "${workspaceFolder}/modules/cli/bin/run",
       // "preLaunchTask": "lerna bootstrap",
       "args": [
-        "test.pas"
-      ]
+        "test.glo"
+      ],
     }
   ]
 }

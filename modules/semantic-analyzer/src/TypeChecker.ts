@@ -1,109 +1,28 @@
-import * as AST from '@pascal-psi/ast';
-import * as Types from '@pascal-psi/data-types';
+// TODO: This module does more than type checking, split it
+import * as AST from '@glossa-glo/ast';
+import * as Types from '@glossa-glo/data-types';
+import { assertTypeEquality } from '@glossa-glo/data-types';
 import {
   BaseSymbolScope,
   SymbolScope,
   VariableSymbol,
   ProcedureSymbol,
-  PSISymbol,
   FunctionSymbol,
   SymbolScopeType,
-} from '@pascal-psi/symbol';
-import PSIError, {
+  FunctionOverload,
+} from '@glossa-glo/symbol';
+import GLOError, {
   assert,
   assertEquality,
   DebugInfoProvider,
-} from '@pascal-psi/error';
-
-function assertTypeEquality({
-  node,
-  left,
-  right,
-  allowPromoteLeft = true,
-  allowPromoteRight = true,
-  message, // Replaces LEFT_TYPE and RIGHT_TYPE with types
-}: {
-  node: DebugInfoProvider;
-  left: typeof Types.PSIDataType;
-  right: typeof Types.PSIDataType;
-  allowPromoteLeft?: boolean;
-  allowPromoteRight?: boolean;
-  message?: string;
-}) {
-  const leftPrint = Types.printType(left);
-  const rightPrint = Types.printType(right);
-
-  if (left.treatAs) {
-    left = left.treatAs;
-  }
-
-  if (right.treatAs) {
-    right = right.treatAs;
-  }
-
-  let promoteLeft: typeof Types.PSIDataType | null = null;
-  let promoteRight: typeof Types.PSIDataType | null = null;
-
-  if (left !== right) {
-    if (
-      allowPromoteLeft &&
-      left.promotable &&
-      left.promotable.includes(right)
-    ) {
-      promoteLeft = left = right;
-    } else if (
-      allowPromoteRight &&
-      right.promotable &&
-      right.promotable.includes(left)
-    ) {
-      promoteRight = right = left;
-    } else if (
-      allowPromoteLeft &&
-      allowPromoteRight &&
-      left.promotable &&
-      right.promotable
-    ) {
-      for (const sharedPromotableCandidate of left.promotable!) {
-        if (right.promotable!.includes(sharedPromotableCandidate)) {
-          promoteLeft = promoteRight = left = right = sharedPromotableCandidate;
-        }
-      }
-    }
-  }
-
-  if (left.multitype && left.multitype.includes(right)) {
-    left = right;
-  } else if (right.multitype && right.multitype.includes(left)) {
-    right = left;
-  } else if (left.multitype && right.multitype) {
-    for (const sharedMultitypeCandidate of left.multitype!) {
-      if (right.multitype!.includes(sharedMultitypeCandidate)) {
-        left = right = sharedMultitypeCandidate;
-      }
-    }
-  }
-
-  assertEquality(
-    node,
-    left,
-    right,
-    message
-      ? message
-          .replace(/LEFT_TYPE/g, leftPrint)
-          .replace(/RIGHT_TYPE/g, rightPrint)
-      : `Expected operands to be of same type but instead got incompatible types ${leftPrint} and ${rightPrint}`,
-  );
-
-  return {
-    promoteLeft,
-    promoteRight,
-  };
-}
+} from '@glossa-glo/error';
 
 export default class TypeChecker extends AST.ASTVisitor<
-  typeof Types.PSIDataType
+  typeof Types.GLODataType
 > {
   private currentScope: SymbolScope;
+  private throwOnIOVisit = false;
+  private throwOnIOVisitErrorMessageSuffix = '';
 
   constructor(protected readonly ast: AST.AST, baseScope: BaseSymbolScope) {
     super();
@@ -111,44 +30,49 @@ export default class TypeChecker extends AST.ASTVisitor<
   }
 
   public visitIntegerConstant(node: AST.IntegerConstantAST) {
-    return Types.PSIInteger;
+    return Types.GLOInteger;
   }
 
   public visitRealConstant(node: AST.RealConstantAST) {
-    return Types.PSIReal;
+    return Types.GLOReal;
   }
 
-  public visitCharConstant(node: AST.CharConstantAST) {
-    return Types.PSIChar;
+  public visitStringConstant(node: AST.StringConstantAST) {
+    return Types.GLOString;
   }
 
   public visitTrue(node: AST.TrueConstantAST) {
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
 
   public visitFalse(node: AST.FalseConstantAST) {
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
 
-  public visitVariable(node: AST.VariableAST) {
+  public visitVariable(node: AST.VariableAST, assignee = false) {
     const symbol = this.currentScope.resolve(node.name)!;
+
     if (symbol instanceof VariableSymbol) {
       return symbol.type;
     } else if (
       symbol instanceof FunctionSymbol &&
       this.currentScope.type === SymbolScopeType.Function && // Is inside function
-      this.currentScope.name === node.name // Variable name matches function name
+      this.currentScope.nameEquals(node.name) && // Variable name matches function name
+      assignee // Variable the left side of an assignment expression
     ) {
       return symbol.returnType;
     } else
-      throw new PSIError(
+      throw new GLOError(
         node,
-        'Attempted to type check non variable or function',
+        'Program error: Attempted to type check non variable or function',
       );
   }
 
   public visitAssignment(node: AST.AssignmentAST) {
-    const left = this.visit(node.left);
+    const left =
+      node.left instanceof AST.VariableAST
+        ? this.visitVariable(node.left, true)
+        : this.visit(node.left);
     const right = this.visit(node.right);
 
     assertTypeEquality({ node, left, right, allowPromoteLeft: false });
@@ -178,10 +102,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.integerDivide,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIInteger;
+    return Types.GLOInteger;
   }
 
   public visitRealDivision(node: AST.RealDivisionAST) {
@@ -207,10 +133,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.divide,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIReal;
+    return Types.GLOReal;
   }
 
   public visitMinus(node: AST.MinusAST) {
@@ -236,7 +164,9 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.subtract,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
     return left;
@@ -265,7 +195,40 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.multiply,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
+    );
+
+    return left;
+  }
+
+  public visitExponentiation(node: AST.ExponentiationAST) {
+    let left = this.visit(node.left);
+    let right = this.visit(node.right);
+
+    const { promoteLeft, promoteRight } = assertTypeEquality({
+      node,
+      left,
+      right,
+    });
+
+    if (promoteLeft && left !== promoteLeft) {
+      left = promoteLeft;
+      node.left = node.left.promote!.get(promoteLeft)!();
+    }
+
+    if (promoteRight && right !== promoteRight) {
+      right = promoteRight;
+      node.right = node.right.promote!.get(promoteRight)!();
+    }
+
+    assert(
+      node,
+      left.prototype.multiply,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
     return left;
@@ -294,7 +257,9 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.mod,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
     return left;
@@ -323,7 +288,9 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.add,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
     return left;
@@ -352,10 +319,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.equals,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitNotEquals(node: AST.NotEqualsAST) {
     let left = this.visit(node.left);
@@ -380,10 +349,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.notEquals,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitGreaterThan(node: AST.GreaterThanAST) {
     let left = this.visit(node.left);
@@ -408,10 +379,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.greaterThan,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitLessThan(node: AST.LessThanAST) {
     let left = this.visit(node.left);
@@ -436,10 +409,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.lessThan,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitGreaterEquals(node: AST.GreaterEqualsAST) {
     let left = this.visit(node.left);
@@ -464,10 +439,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.greaterEqualsThan,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitLessEquals(node: AST.LessEqualsAST) {
     let left = this.visit(node.left);
@@ -492,10 +469,12 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       left.prototype.lessEqualsThan,
-      `Cannot perform operation with type ${Types.printType(left)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        left,
+      )}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitAnd(node: AST.AndAST) {
     const left = this.visit(node.left);
@@ -504,21 +483,21 @@ export default class TypeChecker extends AST.ASTVisitor<
     assertEquality(
       node,
       left,
-      Types.PSIBoolean,
-      `Expected left side of operation to be of type ${Types.printType(
-        Types.PSIBoolean,
-      )} but instead got incompatible type ${Types.printType(left)}`,
+      Types.GLOBoolean,
+      `Περίμενα τον αριστερό τελεστέο να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
     );
     assertEquality(
       node,
       right,
-      Types.PSIBoolean,
-      `Expected right side of operation to be of type ${Types.printType(
-        Types.PSIBoolean,
-      )} but instead got incompatible type ${Types.printType(right)}`,
+      Types.GLOBoolean,
+      `Περίμενα τον δεξιό τελεστέο να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
   public visitOr(node: AST.OrAST) {
     const left = this.visit(node.left);
@@ -527,57 +506,61 @@ export default class TypeChecker extends AST.ASTVisitor<
     assertEquality(
       node,
       left,
-      Types.PSIBoolean,
-      `Expected left side of operation to be of type ${Types.printType(
-        Types.PSIBoolean,
-      )} but instead got incompatible type ${Types.printType(left)}`,
+      Types.GLOBoolean,
+      `Περίμενα τον αριστερό τελεστέο να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
     );
     assertEquality(
       node,
       right,
-      Types.PSIBoolean,
-      `Expected right side of operation to be of type ${Types.printType(
-        Types.PSIBoolean,
-      )} but instead got incompatible type ${Types.printType(right)}`,
+      Types.GLOBoolean,
+      `Περίμενα τον δεξιό τελεστέο να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
 
   public visitNot(node: AST.NotAST) {
-    const target = this.visit(node);
+    const target = this.visit(node.target);
 
     assertEquality(
       node,
       target,
-      Types.PSIBoolean,
-      `Expected operand to be of type ${Types.printType(
-        Types.PSIBoolean,
-      )} but instead got incompatible type ${Types.printType(target)}`,
+      Types.GLOBoolean,
+      `Περίμενα τον τελεστέο να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(target)}`,
     );
 
-    return Types.PSIBoolean;
+    return Types.GLOBoolean;
   }
 
   public visitUnaryMinus(node: AST.UnaryMinusAST) {
-    const target = this.visit(node);
+    const target = this.visit(node.target);
 
     assert(
       node,
       target.prototype.unaryMinus,
-      `Cannot perform operation with type ${Types.printType(target)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        target,
+      )}`,
     );
 
     return this.visit(node.target);
   }
 
   public visitUnaryPlus(node: AST.UnaryPlusAST) {
-    const target = this.visit(node);
+    const target = this.visit(node.target);
 
     assert(
       node,
       target.prototype.unaryPlus(),
-      `Cannot perform operation with type ${Types.printType(target)}`,
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+        target,
+      )}`,
     );
 
     return this.visit(node.target);
@@ -585,60 +568,103 @@ export default class TypeChecker extends AST.ASTVisitor<
 
   public visitProgram(node: AST.ProgramAST) {
     this.currentScope = this.currentScope.children.get(node.name)!;
-    this.visit(node.block);
-    this.currentScope = this.currentScope.getParent()!;
-    return Types.PSIVoid;
-  }
-  public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
-    this.currentScope = this.currentScope.children.get(node.name)!;
-    this.visit(node.block);
-    this.currentScope = this.currentScope.getParent()!;
-    return Types.PSIProcedureType;
-  }
-  public visitBlock(node: AST.BlockAST) {
-    this.visit(node.compoundStatement);
+
     node.declarations.forEach(this.visit.bind(this));
-    return Types.PSIVoid;
+    node.statementList.forEach(this.visit.bind(this));
+
+    this.currentScope = this.currentScope.getParent()!;
+    return Types.GLOVoid;
   }
-  public visitCompound(node: AST.CompoundAST) {
-    node.children.forEach(this.visit.bind(this));
-    return Types.PSIVoid;
+
+  public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
+    this.currentScope = this.currentScope.children.get(node.name.name)!;
+
+    node.declarations.forEach(this.visit.bind(this));
+    node.statementList.forEach(this.visit.bind(this));
+
+    this.currentScope = this.currentScope.getParent()!;
+    return Types.GLOVoid;
   }
+
   public visitIf(node: AST.IfAST) {
     node.children.forEach(this.visit.bind(this));
-    return Types.PSIVoid;
+    return Types.GLOVoid;
   }
 
   public visitEmpty(node: AST.EmptyAST) {
-    return Types.PSIVoid;
+    return Types.GLOVoid;
   }
 
   public visitInteger(node: AST.IntegerAST) {
-    return Types.PSIIntegerType;
+    return Types.GLOVoid;
   }
 
   public visitReal(node: AST.RealAST) {
-    return Types.PSIRealType;
+    return Types.GLOVoid;
   }
 
   public visitBoolean(node: AST.BooleanAST) {
-    return Types.PSIBooleanType;
+    return Types.GLOVoid;
   }
 
-  public visitChar(node: AST.CharAST) {
-    return Types.PSICharType;
+  public visitString(node: AST.StringAST) {
+    return Types.GLOVoid;
   }
 
   public visitVariableDeclaration(node: AST.VariableDeclarationAST) {
     this.visit(node.variable);
     this.visit(node.type);
-    return Types.PSIVoid;
+    return Types.GLOVoid;
   }
 
-  public visitCall(node: AST.CallAST) {
-    const symbol = this.currentScope.resolve<
-      typeof ProcedureSymbol | typeof FunctionSymbol
-    >(node.name)!;
+  public visitFunctionCall(node: AST.FunctionCallAST) {
+    const symbol = this.currentScope.resolve<typeof FunctionSymbol>(node.name)!;
+
+    const overloads: {
+      0: FunctionOverload;
+    } & FunctionOverload[] = [symbol, ...symbol.overloads];
+
+    for (let i = 0; i < node.args.length; i++) {
+      const argAST = node.args[i];
+      const arg = this.visit(argAST);
+
+      const mismatches: typeof Types.GLODataType[] = [];
+
+      for (const overload of overloads) {
+        try {
+          assertTypeEquality({
+            node: argAST,
+            left: overload.args[i].type,
+            right: arg,
+            allowPromoteLeft: false,
+          });
+          break;
+        } catch {
+          mismatches.push(overload.args[i].type);
+        }
+      }
+
+      if (mismatches.length === overloads.length) {
+        throw new GLOError(
+          argAST,
+          `Περίμενα την παράμετρο '${
+            overloads[0].args[i].name
+          }' να είναι τύπου ${Types.printType(mismatches[0])}${mismatches
+            .slice(1)
+            .map(type => ` ή ${Types.printType(type)}`)
+            .join('')}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(arg)}`,
+        );
+      }
+
+      return overloads[mismatches.length].returnType;
+    }
+    return Types.GLOVoid; // Make the compiler happy
+  }
+
+  public visitProcedureCall(node: AST.ProcedureCallAST) {
+    const symbol = this.currentScope.resolve<typeof ProcedureSymbol>(
+      node.name,
+    )!;
 
     symbol.args.forEach(
       ({ type: declarationType, name: argDeclarationName }, i) => {
@@ -650,83 +676,118 @@ export default class TypeChecker extends AST.ASTVisitor<
           left: declarationType,
           right: arg,
           allowPromoteLeft: false,
-          message: `Expected argument ${argDeclarationName} to be of type LEFT_TYPE but instead got incompatible type RIGHT_TYPE`,
+          message: `Περίμενα την παράμετρο '${argDeclarationName}' να είναι τύπου LEFT_TYPE, αλλά έλαβα μη-συμβατό τύπο RIGHT_TYPE`,
         });
       },
     );
-    if (symbol instanceof ProcedureSymbol) {
-      return Types.PSIVoid;
-    } else if (symbol instanceof FunctionSymbol) {
-      return symbol.returnType;
-    } else {
-      throw new PSIError(
-        node,
-        'Program error: Received type checker call of non procedure or function symbol',
-      );
-    }
+
+    return Types.GLOVoid;
   }
 
   public visitFor(node: AST.ForAST) {
-    node.children.forEach(node => this.visit(node).bind(this));
-    return Types.PSIVoid;
+    const counterType = this.visit(node.counter);
+    assertEquality(
+      node.counter,
+      counterType,
+      Types.GLOInteger,
+      `Περίμενα τον μετρητή επανάληψης να είναι τύπου ${Types.printType(
+        Types.GLOInteger,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(counterType)}`,
+    );
+
+    const startValueType = this.visit(node.startValue);
+    assertEquality(
+      node.startValue,
+      startValueType,
+      Types.GLOInteger,
+      `Περίμενα την αρχική τιμή επανάληψης να είναι τύπου ${Types.printType(
+        Types.GLOInteger,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(startValueType)}`,
+    );
+
+    const endValueType = this.visit(node.endValue);
+    assertEquality(
+      node.endValue,
+      endValueType,
+      Types.GLOInteger,
+      `Περίμενα την τελική επανάληψης να είναι τύπου ${Types.printType(
+        Types.GLOInteger,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(endValueType)}`,
+    );
+
+    const stepType = this.visit(node.step);
+    assertEquality(
+      node.step,
+      stepType,
+      Types.GLOInteger,
+      `Περίμενα το βήμα επανάληψης να είναι τύπου ${Types.printType(
+        Types.GLOInteger,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(stepType)}`,
+    );
+
+    node.statementList.forEach(node => this.visit(node).bind(this));
+    return Types.GLOVoid;
   }
+
   public visitWhile(node: AST.WhileAST) {
-    node.children.forEach(node => this.visit(node).bind(this));
-    return Types.PSIVoid;
+    const conditionType = this.visit(node.condition);
+    assertEquality(
+      node.condition,
+      conditionType,
+      Types.GLOBoolean,
+      `Περίμενα τη συνθήκη επανάληψης να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(conditionType)}`,
+    );
+
+    node.statementList.forEach(node => this.visit(node).bind(this));
+    return Types.GLOVoid;
   }
+
   public visitRepeat(node: AST.RepeatAST) {
-    node.children.forEach(node => this.visit(node).bind(this));
-    return Types.PSIVoid;
+    const conditionType = this.visit(node.condition);
+    assertEquality(
+      node.condition,
+      conditionType,
+      Types.GLOBoolean,
+      `Περίμενα τη συνθήκη επανάληψης να είναι τύπου ${Types.printType(
+        Types.GLOBoolean,
+      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(conditionType)}`,
+    );
+
+    node.statementList.forEach(node => this.visit(node).bind(this));
+    return Types.GLOVoid;
   }
 
   public visitSubrange(node: AST.SubrangeAST) {
-    assertEquality(
-      node,
-      this.visit(node.left),
-      this.visit(node.right),
-      'Expected left and right constants of subrange to be of same type',
-    );
+    // assert(
+    //   node,
+    //   node.left.lessEqualsThan(node.right),
+    //   'Περίμενα το αριστερό μέλος του εύρους να είναι μικρότερο από το δεξί',
+    // );
 
-    assert(
-      node,
-      node.left.value.lessEqualsThan(node.right.value),
-      'Expected subrange lower bound to be less or equal to subrange upper bound',
-    );
-
-    return Types.createPSISubrange(node.left.value, node.right.value);
+    return Types.GLOSubrange;
   }
 
   public visitArray(node: AST.ArrayAST) {
-    return Types.PSIVoid;
+    return Types.GLOVoid;
   }
 
   public visitArrayAccess(node: AST.ArrayAccessAST) {
     const array = (this.currentScope.resolve(node.array.name, VariableSymbol)!
       .type as unknown) as {
-      componentType: typeof Types.PSIDataType;
-      indexTypes: typeof Types.PSIType[];
+      componentType: typeof Types.GLODataType;
     };
 
-    assertEquality(
-      node,
-      node.accessors.length,
-      array.indexTypes.length,
-      `Array is ${array.indexTypes.length}-dimensional but ${
-        node.accessors.length
-      } ${
-        node.accessors.length > 1 ? 'index values were' : 'index value was'
-      } provided instead`,
-    );
-
     for (let i = 0; i < node.accessors.length; i++) {
-      const indexType = array.indexTypes[i];
       const accessor = node.accessors[i];
 
       assertTypeEquality({
         node: accessor,
-        left: indexType,
+        left: Types.GLOInteger,
         right: this.visit(accessor),
-        message: `Expected index value to be of type LEFT_TYPE but instead got incompatible type RIGHT_TYPE`,
+        message: `Περίμενα τον δείκτη του πίνακα '${node.array.name}' να είναι τύπου LEFT_TYPE αλλά έλαβα μη-συμβατό τύπο RIGHT_TYPE`,
+        allowPromoteLeft: false,
       });
     }
 
@@ -734,9 +795,62 @@ export default class TypeChecker extends AST.ASTVisitor<
   }
 
   public visitFunctionDeclaration(node: AST.FunctionDeclarationAST) {
-    this.currentScope = this.currentScope.children.get(node.name)!;
-    this.visit(node.block);
+    this.currentScope = this.currentScope.children.get(node.name.name)!;
+
+    this.throwOnIOVisit = true;
+    this.throwOnIOVisitErrorMessageSuffix = 'μέσα σε συνάρτηση';
+    node.declarations.forEach(this.visit.bind(this));
+    node.statementList.forEach(this.visit.bind(this));
+    this.throwOnIOVisit = false;
+    this.throwOnIOVisitErrorMessageSuffix = '';
+
     this.currentScope = this.currentScope.getParent()!;
-    return Types.PSIFunctionType;
+    return Types.GLOVoid;
+  }
+
+  public visitRead(node: AST.ReadAST) {
+    if (this.throwOnIOVisit) {
+      throw new GLOError(
+        node,
+        `Απαγορεύεται εντολή Διάβασε ${this.throwOnIOVisitErrorMessageSuffix}`,
+      );
+    }
+
+    node.args.forEach(arg => {
+      const argType = this.visit(arg);
+      if (!Types.canBeUsedInIO(argType)) {
+        throw new GLOError(
+          arg,
+          `Δεν μπορώ να διαβάσω μεταβλητή με τύπο ${Types.printType(argType)}`,
+        );
+      }
+    });
+
+    return Types.GLOVoid;
+  }
+
+  public visitWrite(node: AST.WriteAST) {
+    if (this.throwOnIOVisit) {
+      throw new GLOError(
+        node,
+        `Απαγορεύεται εντολή Γράψε ${this.throwOnIOVisitErrorMessageSuffix}`,
+      );
+    }
+
+    node.args.forEach(arg => {
+      const argType = this.visit(arg);
+      if (!Types.canBeUsedInIO(argType)) {
+        throw new GLOError(
+          arg,
+          `Δεν μπορώ να γράψω μεταβλητή με τύπο ${Types.printType(argType)}`,
+        );
+      }
+    });
+
+    return Types.GLOVoid;
+  }
+
+  public run() {
+    return this.visit(this.ast);
   }
 }

@@ -1,10 +1,10 @@
 import { Token } from '.';
-import * as Types from '@pascal-psi/data-types';
+import * as Types from '@glossa-glo/data-types';
 
 export default class IntegerConstToken extends Token {
-  public readonly value: Types.PSIInteger;
+  public readonly value: Types.GLOInteger;
 
-  constructor(value: Types.PSIInteger) {
+  constructor(value: Types.GLOInteger) {
     super();
     this.value = value;
   }

@@ -8,7 +8,6 @@
     "declaration": true,
     "strict": true,
     "sourceMap": true,
-    "experimentalDecorators": true,
     "esModuleInterop": true,
     "incremental": true,
     "skipLibCheck": true

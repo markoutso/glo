@@ -1,7 +1,7 @@
-import { ConstantAST } from '.';
-import { PSIBoolean } from '@pascal-psi/data-types';
+import ConstantAST from './ConstantAST';
+import { GLOBoolean } from '@glossa-glo/data-types';
 
 export default class TrueConstantAST extends ConstantAST {
-  dataType = PSIBoolean;
-  public readonly value = new PSIBoolean(true);
+  dataType = GLOBoolean;
+  public readonly value = new GLOBoolean(true);
 }

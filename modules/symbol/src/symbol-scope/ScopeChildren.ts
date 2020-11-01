@@ -1,4 +1,4 @@
-import CaseInsensitiveMap from '@pascal-psi/case-insensitive-map';
+import CaseInsensitiveMap from '@glossa-glo/case-insensitive-map';
 import LocalSymbolScope from './LocalSymbolScope';
 
 export default class ScopeChildren extends CaseInsensitiveMap<

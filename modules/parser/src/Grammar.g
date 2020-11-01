@@ -1,144 +1,147 @@
+nl
+  : "\n"+
+  ;
+
 repeat_loop
-  : "REPEAT" statement_list "UNTIL" expression
+  : "ΑΡΧΗ_ΕΠΑΝΑΛΗΨΗΣ" nl statement_list "ΜΕΧΡΙΣ_ΟΤΟΥ" expression
 
 while_loop
-  : "WHILE" expression "DO" statement
+  : "ΟΣΟ" expression "ΕΠΑΝΑΛΑΒΕ" nl statement_list "ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ"
 
 for_loop
-  : "FOR" assignment_expression ("TO"|"DOWNTO") expression "DO" statement
+  : "ΓΙΑ" (array_access | variable) "ΑΠΟ" expression "ΜΕΧΡΙ" expression "ME BHMA" expression) nl statement_list "ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ"
   ;
 
 if
-  : "IF" expression "THEN" statement
+  : "ΑΝ" expression "ΤΟΤΕ" nl statement_list
   ;
 
 if_statement
-  : if ("ELSE" if)* ("ELSE" statement)?
+  : if ("ΑΛΛΙΩΣ_ΑΝ" expression "ΤΟΤΕ" nl statement_list)* ("ΑΛΛΙΩΣ" nl statement_list)? "ΤΕΛΟΣ_ΑΝ"
   ;
 
-block
-  : declarations compound_statement
+select_case
+  : ("=" | "<>" | "<" | ">" | "<=" | ">=") expression
+  | expression
   ;
 
-declarations
-  : ("VAR" (variable_declaration ";")+ | procedure_declaration)*
-  ;
+select_statement
+  : "ΕΠΙΛΕΞΕ" expression nl ("ΠΕΡΙΠΤΩΣΗ" select_case ("," select_case)* nl statement_list)* ("ΠΕΡΙΠΤΩΣΗ" "ΑΛΛΙΩΣ" nl statement_list)? "ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ"
+
+subprogram_declarations
+  : (procedure_declaration | function_declaration)*
 
 variable_declaration
-  : variable ("," variable)* ":" type
+  : "ΜΕΤΑΒΛΗΤΕΣ" nl (type ":" variable([expression ("," expression)*]) ("," variable([expression ("," expression)*])?)* nl)+
   ;
 
 procedure_declaration
-  : "PROCEDURE" ("(" procedure_or_function_parameters ")") ";" block ";"
+  : "ΔΙΑΔΙΚΑΣΙΑ" variable ("(" procedure_or_function_parameter_list ")") nl (variable_declaration) "ΑΡΧΗ" statement_list "ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ" nl
+  ;
+
+function_return_type
+  : "ΑΚΕΡΑΙΑ"
+  | "ΛΟΓΙΚΗ"
+  | "ΧΑΡΑΚΤΗΡΕΣ"
+  | "ΠΡΑΓΜΑΤΙΚΗ"
   ;
 
 function_declaration
-  : "FUNCTION" ("(" procedure_or_function_parameters ")") ":" type ";" block ";"
+  : "ΣΥΝΑΡΤΗΣΗ" ("(" procedure_or_function_parameter_list ")") ":" function_return_type nl variable_declaration "ΑΡΧΗ" statement_list "ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ" nl
   ;
 
-procedure_or_function_parameters
-  : (variable_declaration (";" variable_declaration)*)?
-  ;
-
-primitive_type
-  : "INTEGER"
-  | "REAL"
-  | "BOOLEAN"
-  | "CHAR"
-  ;
-
-subrange
-  : constant ".." constant
-  ;
-
-index_type
-  : primitive_type
-  | subrange
-  ;
-
-array
-  : "ARRAY" "[" index_type "]" of type
-  ;
-
-array_access
-  : variable "[" expression "]"
+procedure_or_function_parameter_list
+  : (variable ("," variable)*)
   ;
 
 type
-  : primitive_type
-  | array
-  | subrange
+  : "ΑΚΕΡΑΙΑ"
+  | "ΠΡΑΓΜΑΤΙΚΗ"
+  | "ΛΟΓΙΚΗ"
+  | "ΧΑΡΑΚΤΗΡΑΣ"
+  ;
+
+subrange
+  : INTEGER ".." INTEGER
   ;
 
 program
-  : "PROGRAM" variable ";" block "."
-  ;
-
-compound_statement
-  : "BEGIN" statement_list "END"
+  : "\n"* "ΠΡΟΓΡΑΜΜΑ" variable nl variable_declaration "ΑΡΧΗ" nl statement_list "ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ" nl subprogram_declarations
   ;
 
 statement_list:
-  : statement (";" statement)*
+  : statement ("\n" statement)*
+  ;
+
+read_statement
+  : "ΔΙΑΒΑΣΕ" variable([expression ("," expression)*]) ("," variable([expression ("," expression)*])?)*
+  ;
+
+write_statement
+  : "ΓΡΑΨΕ" expression ("," expression)*
   ;
 
 statement
-  : compound_statement
-  | assignment_expression
+  : assignment_expression
   | if_statement
+  | select_statement
   | for_loop
   | while_loop
+  | read_statement
+  | write_statement
   | empty
   ;
 
 assignment_expression
-  : (variable | array_access) ":=" expression
+  : (array_access | variable) "<-" expression
   ;
 
-variable:
-  [a-zA-Z_][a-zA-Z0-9_]* ("[" expression ("," expression)* "]")?
+variable
+  : [α-ωΑ-Ωa-zA-Z_][α-ωΑ-Ωa-zA-Z0-9_]*
+  ;
+
+array_access
+  : variable "[" expression ("," expression)* "]"
   ;
 
 empty
   :
   ;
 
-expression
-  : term (("+" | "-" | "OR") expression)*
-
-term
-  : comparison (("*" | "div" | "/" | "%" | "AND") term)*
+expression:
+  : term (("=" | "<>" | "<" | ">" | "<=" | ">=") expression)?
   ;
 
-comparison:
-  : factor (("=" | "<>" | "<" | ">" | "<=" | ">=") comparison)*
+term
+  : factor (("+" | "-" | "H") term)?
   ;
 
 factor
-  : INTEGER
-  | "+" factor
-  | "-" factor
-  | "(" expression ")"
-  | variable
-  | call
-  | array_access
-  | "TRUE"
-  | "FALSE"
-  | character_constant
-  | "NOT" factor
+  : power (("*" | "div" | "/" | "MOD" | "ΚΑΙ") factor)?
   ;
 
-call
+power
+  : atom ("^" power)?
+  ;
+
+atom
+  : INTEGER
+  | "+" atom
+  | "-" atom
+  | "(" expression ")"
+  | array_access
+  | variable
+  | call
+  | "ΑΛΗΘΗΣ"
+  | "ΨΕΥΔΗΣ"
+  | string_expression
+  | "ΟΧΙ" atom
+  ;
+
+call_function
   : variable "(" (variable ("," variable)* )? ")"
   ;
 
-character_constant
-  : "'" UTF16_CHARACTER "'"
-  ;
-
-constant
-  : INTEGER
-  | character_constant
-  | "TRUE"
-  | "FALSE"
+call_procedure
+  : "ΚΑΛΕΣΕ" variable "(" (variable ("," variable)* )? ")"
   ;

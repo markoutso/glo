@@ -1,3 +1,3 @@
-import { BinaryAST } from '.';
+import BinaryAST from './BinaryAST';
 
 export default class LessEqualsAST extends BinaryAST {}

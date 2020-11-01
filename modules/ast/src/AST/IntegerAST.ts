@@ -1,6 +1,6 @@
 import TypeAST from './TypeAST';
-import { PSIInteger } from '@pascal-psi/data-types';
+import { GLOInteger } from '@glossa-glo/data-types';
 
 export default class IntegerAST extends TypeAST {
-  dataType = PSIInteger;
+  dataType = GLOInteger;
 }

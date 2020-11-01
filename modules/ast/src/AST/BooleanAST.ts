@@ -1,6 +1,6 @@
 import TypeAST from './TypeAST';
-import { PSIBoolean } from '@pascal-psi/data-types';
+import { GLOBoolean } from '@glossa-glo/data-types';
 
 export default class BooleanAST extends TypeAST {
-  dataType = PSIBoolean;
+  dataType = GLOBoolean;
 }

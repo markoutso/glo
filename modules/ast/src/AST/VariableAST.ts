@@ -1,4 +1,4 @@
-import { AST } from '.';
+import AST from './AST';
 
 export default class VariableAST extends AST {
   public readonly name: string;

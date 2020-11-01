@@ -1,7 +1,7 @@
 import 'mocha';
 import { Interpeter } from '../lib/Interpreter';
 
-describe('@pascal-psi/interpreter', () => {
+describe('@glossa-glo/interpreter', () => {
   it('should work', () => {
     console.log(Interpeter);
   });

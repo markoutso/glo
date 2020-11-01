@@ -1,26 +1,11 @@
-import TypeAST from './TypeAST';
-import { ConstantAST } from '.';
-import { BinaryAST } from '.';
+import { GLOInteger } from '@glossa-glo/data-types';
+import AST from './AST';
 
-export default class SubrangeAST extends BinaryAST {
-  get dataType() {
-    if (
-      this.left.dataType &&
-      this.right.dataType &&
-      this.left.dataType === this.right.dataType
-    ) {
-      return this.left.dataType;
-    } else {
-      throw new Error(
-        'Program error: SubrangeAST type could not be calculated',
-      );
-    }
-  }
-
+export default class SubrangeAST extends AST {
   constructor(
-    public readonly left: ConstantAST,
-    public readonly right: ConstantAST,
+    public readonly left: GLOInteger,
+    public readonly right: GLOInteger,
   ) {
-    super(left, right);
+    super();
   }
 }

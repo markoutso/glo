@@ -1,369 +1,727 @@
-import * as Types from '@pascal-psi/data-types';
-import * as AST from '@pascal-psi/ast';
+import * as Types from '@glossa-glo/data-types';
+import * as AST from '@glossa-glo/ast';
 import {
   SymbolScope,
   BaseSymbolScope,
   LocalSymbolScope,
   SymbolScopeType,
-} from '@pascal-psi/symbol';
-import { IntegerConstantAST } from '@pascal-psi/ast';
-import PSIError from '@pascal-psi/error';
+  VariableSymbol,
+  GLOSymbol,
+} from '@glossa-glo/symbol';
+import { IntegerConstantAST, VariableAST } from '@glossa-glo/ast';
+import GLOError, { assertEquality, assert } from '@glossa-glo/error';
+import { toUpperCaseNormalizedGreek } from '@glossa-glo/case-insensitive-map';
 
-export class Interpreter extends AST.ASTVisitor<Types.PSIDataType> {
+export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   public scope: SymbolScope;
 
-  constructor(protected readonly ast: AST.AST, baseScope: BaseSymbolScope) {
+  constructor(
+    protected readonly ast: AST.AST,
+    baseScope: BaseSymbolScope,
+    private readonly helpers: {
+      read: (lineNumber: number) => Promise<string[]>;
+      write: (...data: string[]) => Promise<void>;
+    },
+  ) {
     super();
     this.scope = baseScope;
   }
 
-  private withNewScope<T>(name: string, fn: (scope: LocalSymbolScope) => T) {
-    const scope = (this.scope = this.scope.children.get(name)!);
-    const result = fn(scope);
+  private async withNewScope<T>(
+    name: string,
+    fn: (scope: LocalSymbolScope) => Promise<T>,
+  ) {
+    const scope = this.scope.children.get(name);
+
+    if (!scope)
+      throw new Error(
+        `Program error: Scope with name ${name} does not exist on scope ${this.scope.name}`,
+      );
+
+    this.scope = scope;
+    const result = await fn(scope);
     this.scope = this.scope.getParent()!;
     return result;
   }
 
-  public visitAssignment(node: AST.AssignmentAST) {
+  public async visitAssignment(node: AST.AssignmentAST) {
     const left = node.left;
-    const newValue = this.visit(node.right);
+    const newValue = await this.visit(node.right);
 
     if (left instanceof AST.VariableAST) {
       if (
         this.scope.type === SymbolScopeType.Function && // Is in function
-        left.name === this.scope.name // Variable name matches function name
+        this.scope.nameEquals(left.name) // Variable name matches function name
       ) {
         this.scope.changeFunctionReturnType(left.name, newValue);
       } else this.scope.changeValue(left.name, newValue);
     } else if (left instanceof AST.ArrayAccessAST) {
-      this.scope.changeArrayValue(
+      const dimensionLength = this.scope.resolve(
         left.array.name,
-        left.accessors.map(accessor => this.visit(accessor)),
-        newValue,
+        VariableSymbol,
+      )!.dimensionLength!;
+
+      const accessorValues = await Promise.all(
+        left.accessors.map(node => this.visit(node)),
       );
+
+      for (let i = 0; i < accessorValues.length; i++) {
+        const accessorValue = accessorValues[i];
+
+        assert(
+          left.accessors[i],
+          accessorValue.greaterEqualsThan(new Types.GLOInteger(1)),
+          `Ο δείκτης του πίνακα '${left.array.name}' πρέπει να είναι μεγαλύτερος ή ίσος του 1'`,
+        );
+
+        assert(
+          left.accessors[i],
+          accessorValue.lessEqualsThan(await this.visit(dimensionLength[i])),
+          `Ο δείκτης του πίνακα '${
+            left.array.name
+          }' έχει τιμή ${accessorValue.print()}, εκτός ορίων του πίνακα`,
+        );
+      }
+
+      this.scope.changeArrayValue(left.array.name, accessorValues, newValue);
     }
 
-    return new Types.PSIVoid();
+    return new Types.GLOVoid();
   }
 
-  public visitPlus(node: AST.PlusAST) {
-    return this.visit(node.left).add(this.visit(node.right));
+  public async visitPlus(node: AST.PlusAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return left.add(right);
   }
 
-  public visitMinus(node: AST.MinusAST) {
-    return this.visit(node.left).subtract(this.visit(node.right));
+  public async visitMinus(node: AST.MinusAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return left.subtract(right);
   }
 
-  public visitIntegerDivision(node: AST.IntegerDivisionAST) {
-    return this.visit(node.left).integerDivide(this.visit(node.right));
+  public async visitIntegerDivision(node: AST.IntegerDivisionAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    if (right.equals(new Types.GLOInteger(0))) {
+      throw new GLOError(node, 'Δεν μπορώ να διαιρέσω με το μηδέν');
+    }
+
+    return left.integerDivide(right);
   }
 
-  public visitRealDivision(node: AST.RealDivisionAST) {
-    return this.visit(node.left).divide(this.visit(node.right));
+  public async visitRealDivision(node: AST.RealDivisionAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    if (
+      right.equals(new Types.GLOInteger(0)) ||
+      right.equals(new Types.GLOReal(0))
+    ) {
+      throw new GLOError(node, 'Δεν μπορώ να διαιρέσω με το μηδέν');
+    }
+
+    return left.divide(right);
   }
 
-  public visitMultiplication(node: AST.MultiplicationAST) {
-    return this.visit(node.left).multiply(this.visit(node.right));
+  public async visitMultiplication(node: AST.MultiplicationAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return left.multiply(right);
   }
 
-  public visitMod(node: AST.ModAST) {
-    return this.visit(node.left).mod(this.visit(node.right));
+  public async visitExponentiation(node: AST.MultiplicationAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return left.exponent(right);
   }
 
-  public visitEquals(node: AST.EqualsAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).equals(this.visit(node.right)),
-    );
-  }
-  public visitNotEquals(node: AST.NotEqualsAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).notEquals(this.visit(node.right)),
-    );
-  }
-  public visitGreaterThan(node: AST.GreaterThanAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).greaterThan(this.visit(node.right)),
-    );
-  }
-  public visitLessThan(node: AST.LessThanAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).lessThan(this.visit(node.right)),
-    );
-  }
-  public visitGreaterEquals(node: AST.GreaterEqualsAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).greaterEqualsThan(this.visit(node.right)),
-    );
-  }
-  public visitLessEquals(node: AST.LessEqualsAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).lessEqualsThan(this.visit(node.right)),
-    );
+  public async visitMod(node: AST.ModAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    if (
+      right.equals(new Types.GLOInteger(0)) ||
+      right.equals(new Types.GLOReal(0))
+    ) {
+      throw new GLOError(node, 'Δεν μπορώ να κάνω mod με το μηδέν');
+    }
+
+    return left.mod(right);
   }
 
-  public visitIntegerConstant(node: AST.IntegerConstantAST) {
+  public async visitEquals(node: AST.EqualsAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(left.equals(right));
+  }
+  public async visitNotEquals(node: AST.NotEqualsAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(left.notEquals(right));
+  }
+  public async visitGreaterThan(node: AST.GreaterThanAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(left.greaterThan(right));
+  }
+  public async visitLessThan(node: AST.LessThanAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(left.lessThan(right));
+  }
+  public async visitGreaterEquals(node: AST.GreaterEqualsAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(left.greaterEqualsThan(right));
+  }
+  public async visitLessEquals(node: AST.LessEqualsAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(left.lessEqualsThan(right));
+  }
+
+  public async visitIntegerConstant(node: AST.IntegerConstantAST) {
     return node.value;
   }
 
-  public visitRealConstant(node: AST.RealConstantAST) {
+  public async visitRealConstant(node: AST.RealConstantAST) {
     return node.value;
   }
 
-  public visitCharConstant(node: AST.CharConstantAST) {
+  public async visitStringConstant(node: AST.StringConstantAST) {
     return node.value;
   }
 
-  public visitTrue(node: AST.TrueConstantAST) {
-    return new Types.PSIBoolean(true);
+  public async visitTrue(node: AST.TrueConstantAST) {
+    return new Types.GLOBoolean(true);
   }
 
-  public visitFalse(node: AST.FalseConstantAST) {
-    return new Types.PSIBoolean(false);
+  public async visitFalse(node: AST.FalseConstantAST) {
+    return new Types.GLOBoolean(false);
   }
 
-  public visitUnaryPlus(node: AST.UnaryPlusAST) {
-    return this.visit(node.target).unaryPlus();
+  public async visitUnaryPlus(node: AST.UnaryPlusAST) {
+    const target = await this.visit(node.target);
+
+    return target.unaryPlus();
   }
 
-  public visitUnaryMinus(node: AST.UnaryMinusAST) {
-    return this.visit(node.target).unaryMinus();
+  public async visitUnaryMinus(node: AST.UnaryMinusAST) {
+    const target = await this.visit(node.target);
+
+    return target.unaryMinus();
   }
 
-  public visitCompound(node: AST.CompoundAST) {
-    node.children.forEach(this.visit.bind(this));
-    return new Types.PSIVoid();
-  }
-
-  public visitVariable(node: AST.VariableAST) {
+  public async visitVariable(
+    node: AST.VariableAST,
+    initializationCheck = true,
+  ) {
     const variableValue = this.scope.resolveValue(node.name);
 
-    if (!variableValue) {
-      throw new PSIError(
+    if (!variableValue && initializationCheck) {
+      throw new GLOError(
         node,
-        `Variable '${node.name}' used without first being initialized`,
+        `Η μεταβλητή '${node.name}' χρησιμοποιήθηκε χωρίς πρώτα να έχει αρχικοποιηθεί`,
       );
     }
 
-    return variableValue;
+    return variableValue || new Types.GLOVoid();
   }
 
-  public visitEmpty(node: AST.EmptyAST) {
-    return new Types.PSIVoid();
+  public async visitEmpty(node: AST.EmptyAST) {
+    return new Types.GLOVoid();
   }
 
-  public visitProgram(node: AST.ProgramAST) {
-    return this.withNewScope(node.name, () => {
-      return this.visit(node.block);
+  public async visitProgram(node: AST.ProgramAST) {
+    return await this.withNewScope(node.name, async () => {
+      for (let i = 0; i < node.children.length; i++) {
+        await this.visit(node.children[i]);
+      }
+
+      return new Types.GLOVoid();
     });
   }
 
-  public visitBlock(node: AST.BlockAST) {
-    node.declarations.forEach(this.visit.bind(this));
-    this.visit(node.compoundStatement);
-    return new Types.PSIVoid();
+  public async visitVariableDeclaration(node: AST.VariableDeclarationAST) {
+    return new Types.GLOVoid();
   }
 
-  public visitVariableDeclaration(node: AST.VariableDeclarationAST) {
-    return new Types.PSIVoid();
+  public async visitReal(node: AST.RealAST) {
+    return new Types.GLOVoid();
   }
 
-  public visitReal(node: AST.RealAST) {
-    return new Types.PSIRealType();
+  public async visitInteger(node: AST.IntegerAST) {
+    return new Types.GLOVoid();
   }
 
-  public visitInteger(node: AST.IntegerAST) {
-    return new Types.PSIIntegerType();
+  public async visitBoolean(node: AST.BooleanAST) {
+    return new Types.GLOVoid();
   }
 
-  public visitBoolean(node: AST.BooleanAST) {
-    return new Types.PSIBooleanType();
+  public async visitString(node: AST.StringAST) {
+    return new Types.GLOVoid();
   }
 
-  public visitChar(node: AST.CharAST) {
-    return new Types.PSICharType();
-  }
+  public async visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
+    const procedure = new Types.GLOProcedure(async (args, rewrite) => {
+      await this.withNewScope(node.name.name, async scope => {
+        // Allow recursion
+        scope.insert(
+          this.scope.resolve(node.name.name)!, // Guaranteed by TypeChecker
+        );
+        scope.changeValue(node.name.name, procedure);
+        new LocalSymbolScope(
+          node.name.name,
+          SymbolScopeType.Procedure,
+          this.scope,
+        );
 
-  public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
-    this.scope.changeValue(
-      node.name,
-      new Types.PSIProcedure(args => {
-        this.withNewScope(node.name, scope => {
-          node.args
-            .map(arg => arg.variable.name)
-            .forEach((argName, i) => {
-              scope.changeValue(argName, args[i]);
-            });
-          this.visit(node.block);
+        // Register parameter values
+        node.args
+          // Filter uninitialized variables
+          .filter((arg, i) => !(args[i] instanceof Types.GLOVoid))
+          .map(arg => arg.name)
+          .forEach((argName, i) => {
+            scope.changeValue(argName, args[i]);
+          });
+
+        for (let i = 0; i < node.declarations.length; i++) {
+          await this.visit(node.declarations[i]);
+        }
+        for (let i = 0; i < node.statementList.length; i++) {
+          await this.visit(node.statementList[i]);
+        }
+
+        // Rewrite parameter values in parent scope
+        node.args.forEach((arg, i) => {
+          const currentRewrite = rewrite[i];
+
+          if (currentRewrite) {
+            if (currentRewrite.accessors) {
+              scope
+                .getParent()!
+                .changeArrayValue(
+                  currentRewrite.name,
+                  currentRewrite.accessors,
+                  scope.resolveValue(arg.name)!,
+                );
+            } else {
+              scope
+                .getParent()!
+                .changeValue(
+                  currentRewrite.name,
+                  scope.resolveValue(arg.name)!,
+                );
+            }
+          }
         });
-      }),
-    );
-    return new Types.PSIVoid();
+      });
+    });
+
+    this.scope.changeValue(node.name.name, procedure);
+    return new Types.GLOVoid();
   }
 
-  public visitIf(node: AST.IfAST) {
-    const condition = this.visit(node.condition);
-    if (condition.equals(Types.PSIBoolean.true)) {
-      this.visit(node.statement);
+  public async visitIf(node: AST.IfAST) {
+    const condition = await this.visit(node.condition);
+    if (condition.equals(Types.GLOBoolean.true)) {
+      for (let i = 0; i < node.statementList.length; i++) {
+        await this.visit(node.statementList[i]);
+      }
     } else {
       if (node.next) {
-        this.visit(node.next);
+        if (Array.isArray(node.next)) {
+          for (let i = 0; i < node.next.length; i++) {
+            await this.visit(node.next[i]);
+          }
+        } else {
+          this.visit(node.next);
+        }
       }
     }
-    return new Types.PSIVoid();
+    return new Types.GLOVoid();
   }
 
-  public visitAnd(node: AST.AndAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).equals(Types.PSIBoolean.true) &&
-        this.visit(node.right).equals(Types.PSIBoolean.true),
+  public async visitAnd(node: AST.AndAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(
+      left.equals(Types.GLOBoolean.true) && right.equals(Types.GLOBoolean.true),
     );
   }
-  public visitOr(node: AST.OrAST) {
-    return new Types.PSIBoolean(
-      this.visit(node.left).equals(Types.PSIBoolean.true) ||
-        this.visit(node.right).equals(Types.PSIBoolean.true),
+  public async visitOr(node: AST.OrAST) {
+    const left = await this.visit(node.left);
+    const right = await this.visit(node.right);
+
+    return new Types.GLOBoolean(
+      left.equals(Types.GLOBoolean.true) || right.equals(Types.GLOBoolean.true),
     );
   }
-  public visitNot(node: AST.NotAST) {
-    const target = this.visit(node.target);
-    return target.equals(Types.PSIBoolean.true)
-      ? Types.PSIBoolean.false
-      : Types.PSIBoolean.true;
+  public async visitNot(node: AST.NotAST) {
+    const target = await this.visit(node.target);
+
+    return target.equals(Types.GLOBoolean.true)
+      ? Types.GLOBoolean.false
+      : Types.GLOBoolean.true;
   }
 
-  public visitCall(node: AST.CallAST) {
-    const args = node.args.map(arg => this.visit(arg));
-    const procedureOrFunction = this.scope.resolveValue<
-      Types.PSIProcedure | Types.PSIFunction
-    >(node.name)!;
+  public async visitFunctionCall(node: AST.FunctionCallAST) {
+    const args = await Promise.all(node.args.map(arg => this.visit(arg)));
+    const func = this.scope.resolveValue<Types.GLOFunction>(node.name)!;
 
-    procedureOrFunction.call(args);
+    await func.call(args, node.args);
 
-    if (procedureOrFunction instanceof Types.PSIFunction) {
-      const returnValue = this.scope.resolveValue<Types.PSIFunction>(node.name)!
-        .returnValue;
+    const returnValue = this.scope.resolveValue<Types.GLOFunction>(node.name)!
+      .returnValue;
 
-      if (!returnValue) {
-        throw new PSIError(node, 'Function does not return any value');
-      }
-
-      return returnValue;
-    } else {
-      return new Types.PSIVoid();
+    if (!returnValue) {
+      throw new GLOError(
+        node,
+        `Η συνάρτηση '${node.name}' δεν επιστρέφει κάποια τιμή`,
+      );
     }
+
+    return returnValue;
   }
 
-  public visitFor(node: AST.ForAST) {
-    const variable = node.assignment.left;
-    this.visitAssignment(node.assignment);
-    this.visit(node.statement);
-    if (node.increment) {
-      while (this.visit(variable).lessThan(this.visit(node.finalValue))) {
-        this.visit(
-          new AST.AssignmentAST(
-            variable,
-            new AST.PlusAST(
-              variable,
-              new IntegerConstantAST(new Types.PSIInteger(1)),
-            ),
-          ),
-        );
-        this.visit(node.statement);
-      }
-    } else {
-      while (this.visit(variable).greaterThan(this.visit(node.finalValue))) {
-        this.visit(
-          new AST.AssignmentAST(
-            variable,
-            new AST.MinusAST(
-              variable,
-              new IntegerConstantAST(new Types.PSIInteger(1)),
-            ),
-          ),
-        );
-        this.visit(node.statement);
-      }
-    }
-    return new Types.PSIVoid();
-  }
+  public async visitProcedureCall(node: AST.ProcedureCallAST) {
+    const args = await Promise.all(
+      node.args.map(arg => {
+        if (arg instanceof AST.VariableAST) {
+          return this.visitVariable(arg, false);
+        } else if (arg instanceof AST.ArrayAccessAST) {
+          return this.visitArrayAccess(arg, false);
+        } else {
+          return this.visit(arg);
+        }
+      }),
+    );
+    const procedure = this.scope.resolveValue<Types.GLOProcedure>(node.name)!;
 
-  public visitWhile(node: AST.WhileAST) {
-    while (this.visit(node.condition).equals(Types.PSIBoolean.true)) {
-      this.visit(node.statement);
-    }
-    return new Types.PSIVoid();
-  }
-
-  public visitRepeat(node: AST.RepeatAST) {
-    do {
-      node.statements.forEach(this.visit.bind(this));
-    } while (this.visit(node.condition).equals(Types.PSIBoolean.false));
-    return new Types.PSIVoid();
-  }
-
-  public visitSubrange(node: AST.SubrangeAST) {
-    return new (Types.createPSISubrange(
-      this.visitConstant(node.left),
-      this.visitConstant(node.right),
-    ))();
-  }
-
-  public visitArray(node: AST.ArrayAST) {
-    return new (Types.createPSIArray(
-      node.indexTypes.map(
-        node =>
-          (this.visit(node).constructor as unknown) as typeof Types.PSIType,
+    await procedure.call(
+      args,
+      await Promise.all(
+        node.args.map(async arg => {
+          if (arg instanceof AST.VariableAST) {
+            return {
+              name: arg.name,
+              accessors: null,
+            };
+          } else if (arg instanceof AST.ArrayAccessAST) {
+            return {
+              name: arg.array.name,
+              accessors: await Promise.all(
+                arg.accessors.map(arg => this.visit(arg)),
+              ),
+            };
+          } else return false;
+        }),
       ),
-      (this.visit(node.componentType)
-        .constructor as unknown) as typeof Types.PSIDataType,
-    ))();
+    );
+
+    return new Types.GLOVoid();
   }
 
-  public visitArrayAccess(node: AST.ArrayAccessAST) {
-    const variableValue = this.scope.resolveValue(node.array.name);
+  public async visitFor(node: AST.ForAST) {
+    this.visitAssignment(new AST.AssignmentAST(node.counter, node.startValue));
 
-    if (!variableValue) {
-      throw new PSIError(
+    if ((await this.visit(node.step)).equals(new Types.GLOInteger(0))) {
+      throw new GLOError(node.step, 'Απαγορεύεται επανάληψη με βήμα 0');
+    } else {
+      while (
+        (await this.visit(node.step)).greaterThan(new Types.GLOInteger(0))
+          ? (await this.visit(node.counter)).lessEqualsThan(
+              await this.visit(node.endValue),
+            )
+          : (await this.visit(node.counter)).greaterEqualsThan(
+              await this.visit(node.endValue),
+            )
+      ) {
+        for (let i = 0; i < node.statementList.length; i++) {
+          await this.visit(node.statementList[i]);
+        }
+
+        await this.visit(
+          new AST.AssignmentAST(
+            node.counter,
+            new AST.PlusAST(
+              node.counter,
+              new IntegerConstantAST(
+                (await this.visit(
+                  node.step,
+                )) as Types.GLOInteger /* Guaranteed by TypeChecker */,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return new Types.GLOVoid();
+  }
+
+  public async visitWhile(node: AST.WhileAST) {
+    while ((await this.visit(node.condition)).equals(Types.GLOBoolean.true)) {
+      for (let i = 0; i < node.statementList.length; i++) {
+        await this.visit(node.statementList[i]);
+      }
+    }
+    return new Types.GLOVoid();
+  }
+
+  public async visitRepeat(node: AST.RepeatAST) {
+    do {
+      for (let i = 0; i < node.statementList.length; i++) {
+        await this.visit(node.statementList[i]);
+      }
+    } while ((await this.visit(node.condition)).equals(Types.GLOBoolean.false));
+    return new Types.GLOVoid();
+  }
+
+  public async visitSubrange(node: AST.SubrangeAST) {
+    return new Types.GLOSubrange(node.left, node.right);
+  }
+
+  public async visitArray(node: AST.ArrayAST) {
+    return new Types.GLOVoid();
+  }
+
+  public async visitArrayAccess(
+    node: AST.ArrayAccessAST,
+    initializationCheck = true,
+  ) {
+    const array = this.scope.resolveValue(node.array.name);
+
+    if (!array) {
+      throw new GLOError(
         node,
         `Program error: Array accessed without being initialized`,
       );
     }
 
-    if (!Types.isPSIArray(variableValue)) {
-      throw new PSIError(
+    if (!Types.isGLOArray(array)) {
+      throw new GLOError(
         node,
         `Program error: Expected array access variable to be array`,
       );
     }
-    const value = variableValue.getValue(
+
+    const dimensionLength = this.scope.resolve(node.array.name, VariableSymbol)!
+      .dimensionLength!;
+
+    assertEquality(
+      node,
+      node.accessors.length,
+      dimensionLength.length,
+      `Ο πίνακας είναι ${dimensionLength.length}-διάστατος αλλά ${
+        node.accessors.length === 1 ? 'δόθηκε' : 'δόθηκαν'
+      } ${node.accessors.length} ${
+        node.accessors.length === 1 ? 'δείκτης' : 'δείκτες'
+      }`,
+    );
+
+    const accessorValues = await Promise.all(
       node.accessors.map(node => this.visit(node)),
     );
 
-    if (!value) {
-      throw new PSIError(
+    for (let i = 0; i < accessorValues.length; i++) {
+      const accessorValue = accessorValues[i];
+
+      assert(
+        node.accessors[i],
+        accessorValue.greaterEqualsThan(new Types.GLOInteger(1)),
+        `Ο δείκτης του πίνακα '${node.array.name}' πρέπει να είναι μεγαλύτερος ή ίσος του 1'`,
+      );
+
+      assert(
+        node.accessors[i],
+        accessorValue.lessEqualsThan(await this.visit(dimensionLength[i])),
+        `Ο δείκτης του πίνακα '${
+          node.array.name
+        }' έχει τιμή ${accessorValue.print()}, εκτός ορίων του πίνακα`,
+      );
+    }
+
+    const value = array.getValue(accessorValues);
+
+    if (!value && initializationCheck) {
+      throw new GLOError(
         node,
-        `Array '${node.array.name}' index used without first being initialized`,
+        `Προσπάθησα να χρησιμοποιήσω το στοιχείο του πίνακα '${node.array.name}' χωρίς πρώτα αυτό να έχει αρχικοποιηθεί`,
       );
     }
 
     return value!;
   }
 
-  public visitFunctionDeclaration(node: AST.FunctionDeclarationAST) {
-    this.scope.changeValue(
-      node.name,
-      new Types.PSIFunction(args => {
-        this.withNewScope(node.name, scope => {
-          node.args
-            .map(arg => arg.variable.name)
-            .forEach((argName, i) => {
-              scope.changeValue(argName, args[i]);
-            });
-          this.visit(node.block);
-        });
-      }),
+  public async visitFunctionDeclaration(node: AST.FunctionDeclarationAST) {
+    const func = new Types.GLOFunction(async args => {
+      await this.withNewScope(node.name.name, async scope => {
+        // Allow recursion
+        scope.insert(
+          this.scope.resolve(node.name.name)!, // Guaranteed by TypeChecker
+        );
+        scope.changeValue(node.name.name, func);
+        new LocalSymbolScope(
+          node.name.name,
+          SymbolScopeType.Function,
+          this.scope,
+        );
+
+        node.args
+          .map(arg => arg.name)
+          .forEach((argName, i) => {
+            scope.changeValue(argName, args[i]);
+          });
+
+        for (let i = 0; i < node.declarations.length; i++) {
+          await this.visit(node.declarations[i]);
+        }
+        for (let i = 0; i < node.statementList.length; i++) {
+          await this.visit(node.statementList[i]);
+        }
+      });
+    });
+
+    this.scope.changeValue(node.name.name, func);
+
+    return new Types.GLOVoid();
+  }
+
+  public async visitWrite(node: AST.WriteAST) {
+    const args = await Promise.all(
+      node.args.map(arg => this.visit(arg)),
+    ).then(args => args.map(arg => arg.print()));
+
+    await this.helpers.write(...args);
+
+    return new Types.GLOVoid();
+  }
+
+  public async visitRead(node: AST.ReadAST) {
+    const readings = await this.helpers.read(node.start.linePosition);
+
+    const noInfoError = {
+      start: {
+        linePosition: -1,
+        characterPosition: -1,
+      },
+      end: {
+        linePosition: -1,
+        characterPosition: -1,
+      },
+    };
+
+    if (node.args.length !== readings.length) {
+      throw new GLOError(
+        noInfoError,
+        `Περίμενα να διαβάσω ${node.args.length} ${
+          node.args.length === 1 ? 'μεταβλητή' : 'μεταβλητές'
+        } αλλά μου ${readings.length === 1 ? 'δόθηκε' : 'δόθηκαν'} ${
+          readings.length
+        } ${readings.length === 1 ? 'μεταβλητή' : 'μεταβλητές'}`,
+      );
+    }
+
+    const argNames = node.args.map(arg =>
+      arg instanceof VariableAST ? arg.name : arg.array.name,
+    );
+    const variableTypes = node.args.map((arg, i) =>
+      arg instanceof VariableAST
+        ? (this.scope.resolve(argNames[i]) as VariableSymbol).type
+        : (((this.scope.resolve(argNames[i]) as VariableSymbol).type as any)
+            .componentType as typeof Types.GLODataType),
     );
 
-    return new Types.PSIFunctionType();
+    const values = readings.map((str, i) => {
+      const expectedType = variableTypes[i];
+      const name = argNames[i];
+
+      if (expectedType === Types.GLOBoolean) {
+        if (toUpperCaseNormalizedGreek(str) === 'ΑΛΗΘΗΣ') {
+          return new Types.GLOBoolean(true);
+        } else if (toUpperCaseNormalizedGreek(str) === 'ΨΕΥΔΗΣ') {
+          return new Types.GLOBoolean(false);
+        } else {
+          throw new GLOError(
+            noInfoError,
+            `Περίμενα να διαβάσω λογική τιμή(ΑΛΗΘΗΣ ή ΨΕΥΔΗΣ) στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη λογική τιμή '${str}'`,
+          );
+        }
+      } else if (expectedType === Types.GLOReal) {
+        if (/^[+-]?\d+\.\d+$/.test(str)) {
+          return new Types.GLOReal(parseFloat(str));
+        } else {
+          throw new GLOError(
+            noInfoError,
+            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη πραγματική τιμή '${str}'`,
+          );
+        }
+      } else if (expectedType === Types.GLOInteger) {
+        if (/^[+-]?\d+$/.test(str)) {
+          return new Types.GLOInteger(parseInt(str));
+        } else {
+          throw new GLOError(
+            noInfoError,
+            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη ακέραια τιμή '${str}'`,
+          );
+        }
+      } else if (expectedType === Types.GLOString) {
+        return new Types.GLOString(str);
+      } else {
+        throw new Error(
+          `Invalid expected read type ${expectedType.constructor.name}`,
+        );
+      }
+    });
+
+    for (let i = 0; i < node.args.length; i++) {
+      const arg = node.args[i];
+      const value = values[i];
+
+      // const valueType = value.constructor as typeof Types.GLODataType;
+
+      // const name = argNames[i];
+      // const variableType = variableTypes[i];
+
+      // Types.assertTypeEquality({
+      //   node: arg,
+      //   left: variableType,
+      //   right: valueType,
+      //   allowPromoteLeft: false,
+      //   message: `Προσπάθησα να διαβάσω την τιμή '${value.print()}' τύπου RIGHT_TYPE στην μεταβλητή '${name}' μη συμβατού τύπου LEFT_TYPE`,
+      // });
+
+      if (arg instanceof AST.VariableAST) {
+        this.scope.changeValue(arg.name, value);
+      } else {
+        this.scope.changeArrayValue(
+          arg.array.name,
+          await Promise.all(arg.accessors.map(arg => this.visit(arg))),
+          value,
+        );
+      }
+    }
+
+    return new Types.GLOVoid();
+  }
+
+  public async run() {
+    await this.visit(this.ast);
+    return;
   }
 }

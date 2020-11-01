@@ -1,17 +1,17 @@
-import { TypeAST } from '.';
-import { AST, BlockAST, VariableDeclarationAST } from '.';
+import AST from './AST';
+import TypeAST from './TypeAST';
+import VariableAST from './VariableAST';
+import VariableDeclarationAST from './VariableDeclarationAST';
 
 export default class FunctionDeclarationAST extends AST {
-  public readonly name: string;
-
   constructor(
-    name: string,
-    public args: VariableDeclarationAST[],
-    public returnType: TypeAST,
-    public block: BlockAST,
+    public readonly name: VariableAST,
+    public readonly args: VariableAST[],
+    public readonly returnType: TypeAST,
+    public readonly declarations: VariableDeclarationAST[],
+    public readonly statementList: AST[],
   ) {
     super();
-    this.name = name;
-    this.addChild(...args, returnType, block);
+    this.addChild(...args, returnType, ...declarations, ...statementList);
   }
 }

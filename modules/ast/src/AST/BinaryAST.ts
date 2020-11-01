@@ -1,4 +1,4 @@
-import { AST } from '.';
+import AST from './AST';
 
 export default abstract class BinaryAST extends AST {
   private _left!: AST;

@@ -1,20 +1,21 @@
 import ConstantAST from './ConstantAST';
-import * as Types from '@pascal-psi/data-types';
-import { AST, RealConstantAST } from '.';
+import * as Types from '@glossa-glo/data-types';
+import RealConstantAST from './RealConstantAST';
+import AST from './AST';
 
 export default class IntegerConstantAST extends ConstantAST {
-  public readonly value: Types.PSIInteger;
-  dataType = Types.PSIInteger;
-  constructor(value: Types.PSIInteger) {
+  public readonly value: Types.GLOInteger;
+  dataType = Types.GLOInteger;
+  constructor(value: Types.GLOInteger) {
     super();
     this.value = value;
 
-    this.promote.set(Types.PSIReal, () => {
-      return new RealConstantAST(this.value.promote!.get(
-        Types.PSIReal,
-      )!() as Types.PSIReal);
+    this.promote.set(Types.GLOReal, () => {
+      return new RealConstantAST(
+        this.value.promote!.get(Types.GLOReal)!() as Types.GLOReal,
+      );
     });
   }
 
-  public promote: Map<typeof Types.PSIDataType, () => AST> = new Map();
+  public promote: Map<typeof Types.GLODataType, () => AST> = new Map();
 }

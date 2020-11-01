@@ -1,45 +1,50 @@
-import * as AST from '@pascal-psi/ast';
+import * as AST from '@glossa-glo/ast';
 import {
   BaseSymbolScope,
   LocalSymbolScope,
   SymbolScope,
   ProgramSymbol,
   SymbolScopeType,
-} from '@pascal-psi/symbol';
-import * as PSISymbol from '@pascal-psi/symbol';
-import * as Types from '@pascal-psi/data-types';
-import PSIError from '@pascal-psi/error';
+  VariableSymbol,
+} from '@glossa-glo/symbol';
+import * as GLOSymbol from '@glossa-glo/symbol';
+import GLOError from '@glossa-glo/error';
+import { VariableAST } from '@glossa-glo/ast';
 
-export default class SymbolBuilder extends AST.ASTVisitor<PSISymbol.PSISymbol | void> {
+export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | void> {
   private currentScope: SymbolScope;
 
-  constructor(
-    protected readonly ast: AST.AST,
-    private readonly baseScope: BaseSymbolScope,
-  ) {
+  constructor(protected readonly ast: AST.AST, baseScope: BaseSymbolScope) {
     super();
     this.currentScope = baseScope;
   }
 
-  public visitCompound(node: AST.CompoundAST) {
-    node.children.forEach(this.visit.bind(this));
-  }
-
-  public visitVariable(node: AST.VariableAST): PSISymbol.PSISymbol {
+  public visitVariable(
+    node: AST.VariableAST,
+    assignee = false,
+  ): GLOSymbol.GLOSymbol {
     const variableValue = this.currentScope.resolve(node.name);
 
-    if (variableValue instanceof PSISymbol.VariableSymbol) {
+    if (variableValue instanceof GLOSymbol.VariableSymbol) {
       return variableValue;
     } else if (
-      variableValue instanceof PSISymbol.FunctionSymbol &&
+      variableValue instanceof GLOSymbol.FunctionSymbol &&
       this.currentScope.type === SymbolScopeType.Function && // Is inside function
-      this.currentScope.name === node.name // Variable name matches function name
+      this.currentScope.nameEquals(node.name) && // Variable name matches function name
+      assignee // Variable the left side of an assignment expression
     ) {
       return variableValue;
-    } else {
-      throw new PSIError(
+    } else if (variableValue) {
+      throw new GLOError(
         node,
-        `Variable ${node.name} used without first being declared`,
+        `Το αναγνωριστικό '${
+          node.name
+        }' τύπου ${variableValue.print()} δεν μπορεί να χρησιμοποιηθεί μέσα σε έκφραση`,
+      );
+    } else {
+      throw new GLOError(
+        node,
+        `Η μεταβλητή ${node.name} χρησιμοποιήθηκε χωρίς πρώτα να έχει οριστεί`,
       );
     }
   }
@@ -51,28 +56,27 @@ export default class SymbolBuilder extends AST.ASTVisitor<PSISymbol.PSISymbol | 
       this.currentScope,
     );
     this.currentScope.insert(new ProgramSymbol(node.name));
-    this.visit(node.block);
-    this.currentScope = this.currentScope.getParent()!;
-  }
-
-  public visitBlock(node: AST.BlockAST) {
     node.declarations.forEach(this.visit.bind(this));
-    this.visit(node.compoundStatement);
+    node.statementList.forEach(this.visit.bind(this));
+    this.currentScope = this.currentScope.getParent()!;
   }
 
   public visitVariableDeclaration(
     node: AST.VariableDeclarationAST,
-  ): PSISymbol.VariableSymbol {
-    let symbol: PSISymbol.VariableSymbol;
+  ): GLOSymbol.VariableSymbol {
+    let symbol: GLOSymbol.VariableSymbol;
 
     if (node.type.dataType) {
-      symbol = new PSISymbol.VariableSymbol(
+      symbol = new GLOSymbol.VariableSymbol(
         node.variable.name,
         node.type.dataType,
-      ).inheritPositionFrom(node);
+        node.type instanceof AST.ArrayAST
+          ? node.type.dimensionLength
+          : undefined,
+      ).inheritPositionFrom(node.variable);
     } else
-      throw new PSIError(
-        node,
+      throw new GLOError(
+        node.type,
         `Program error: Unknown data type ${node.type.constructor.name}`,
       );
 
@@ -82,75 +86,156 @@ export default class SymbolBuilder extends AST.ASTVisitor<PSISymbol.PSISymbol | 
 
   public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST): void {
     this.currentScope = new LocalSymbolScope(
-      node.name,
+      node.name.name,
       SymbolScopeType.Procedure,
       this.currentScope,
     );
-    const argSymbols = node.args.map(arg => this.visitVariableDeclaration(arg));
+
+    const procedureVariables = node.declarations.map(arg =>
+      this.visitVariableDeclaration(arg),
+    );
+
+    const procedureVariableNames = procedureVariables.map(v => v.name);
+    node.args.forEach(arg => {
+      if (!procedureVariableNames.includes(arg.name)) {
+        throw new GLOError(
+          arg,
+          `Η παράμετρος ${arg.name} δεν ορίζεται στο τμήμα δηλώσεων της διαδικασίας`,
+        );
+      }
+    });
+
+    const argNames = node.args.map(arg => arg.name);
+
+    const argSymbols = procedureVariables.filter(symbol =>
+      argNames.includes(symbol.name),
+    );
 
     this.currentScope
       .getParent()!
       .insert(
-        new PSISymbol.ProcedureSymbol(
-          node.name,
+        new GLOSymbol.ProcedureSymbol(
+          node.name.name,
           argSymbols,
-        ).inheritPositionFrom(node),
+        ).inheritPositionFrom(node.name),
       );
 
-    this.visit(node.block);
+    node.statementList.forEach(this.visit.bind(this));
     this.currentScope = this.currentScope.getParent()!;
   }
 
   public visitFunctionDeclaration(node: AST.FunctionDeclarationAST): void {
     this.currentScope = new LocalSymbolScope(
-      node.name,
+      node.name.name,
       SymbolScopeType.Function,
       this.currentScope,
     );
-    const argSymbols = node.args.map(arg => this.visitVariableDeclaration(arg));
+
+    const functionVariables = node.declarations.map(arg =>
+      this.visitVariableDeclaration(arg),
+    );
+
+    const argNames = node.args.map(arg => arg.name);
+
+    const functionVariableNames = functionVariables.map(v => v.name);
+    node.args.forEach(arg => {
+      if (!functionVariableNames.includes(arg.name)) {
+        throw new GLOError(
+          arg,
+          `Η παράμετρος ${arg.name} δεν ορίζεται στο τμήμα δηλώσεων της συνάρτησης`,
+        );
+      }
+    });
+
+    const argSymbols = functionVariables.filter(symbol =>
+      argNames.includes(symbol.name),
+    );
 
     this.currentScope
       .getParent()!
       .insert(
-        new PSISymbol.FunctionSymbol(
-          node.name,
+        new GLOSymbol.FunctionSymbol(
+          node.name.name,
           argSymbols,
           node.returnType.dataType,
-        ).inheritPositionFrom(node),
+        ).inheritPositionFrom(node.name),
       );
 
-    this.visit(node.block);
+    node.statementList.forEach(this.visit.bind(this));
     this.currentScope = this.currentScope.getParent()!;
   }
 
-  public visitCall(node: AST.CallAST) {
+  public visitFunctionCall(node: AST.FunctionCallAST) {
     node.args.forEach(this.visit.bind(this));
 
-    const procedureOrFunction = this.currentScope.resolve(node.name);
+    const symbol = this.currentScope.resolve(node.name);
 
-    if (
-      !procedureOrFunction ||
-      (!(procedureOrFunction instanceof PSISymbol.ProcedureSymbol) &&
-        !(procedureOrFunction instanceof PSISymbol.FunctionSymbol))
-    ) {
-      throw new PSIError(
+    if (!symbol) {
+      throw new GLOError(
         node,
-        `Could not find procedure or function ${node.name}`,
+        `Δεν έχει οριστεί συνάρτηση με όνομα ${node.name}`,
       );
-    } else if (node.args.length != procedureOrFunction.args.length) {
-      throw new PSIError(
+    } else if (symbol instanceof GLOSymbol.ProcedureSymbol) {
+      throw new GLOError(
         node,
-        `Expected ${procedureOrFunction.args.length} procedure argument${
-          procedureOrFunction.args.length > 1 ? 's' : ''
-        } but ${node.args.length} ${
-          node.args.length === 1 ? 'was' : 'were'
-        } provided`,
+        `Η διαδικασία '${node.name}' μπορεί να καλεστεί μόνο με την εντολή ΚΑΛΕΣΕ και όχι μεσα σε μια έκφραση`,
+      );
+    } else if (symbol instanceof GLOSymbol.VariableSymbol) {
+      throw new GLOError(
+        node,
+        `Δεν μπορώ να καλέσω την μεταβλητή '${node.name}'`,
+      );
+    } else if (!(symbol instanceof GLOSymbol.FunctionSymbol)) {
+      throw new GLOError(
+        node,
+        `Δεν μπορώ να καλέσω το αναγνωριστικό '${
+          node.name
+        }' τύπου ${symbol.print()} μέσα σε έκφραση`,
+      );
+    } else if (node.args.length != symbol.args.length) {
+      throw new GLOError(
+        node,
+        `Περίμενα ${symbol.args.length} ${
+          symbol.args.length === 1 ? 'παράμετρο' : 'παραμέτρους'
+        } συνάρτησης αλλά έλαβα ${node.args.length}`,
+      );
+    }
+  }
+
+  public visitProcedureCall(node: AST.ProcedureCallAST) {
+    node.args.forEach(this.visit.bind(this));
+
+    const symbol = this.currentScope.resolve(node.name);
+
+    if (!symbol) {
+      throw new GLOError(
+        node,
+        `Δεν έχει οριστεί διαδικασία με όνομα ${node.name}`,
+      );
+    } else if (!(symbol instanceof GLOSymbol.ProcedureSymbol)) {
+      throw new GLOError(
+        node,
+        `Η εντολή ΚΑΛΕΣΕ μπορεί να χρησιμοποιηθεί μόνο με παράμετρο μια διαδικασία, αλλά έλαβα παράμετρο '${
+          node.name
+        }' τύπου ${symbol.print()}`,
+      );
+    } else if (node.args.length != symbol.args.length) {
+      throw new GLOError(
+        node,
+        `Περίμενα ${symbol.args.length} ${
+          symbol.args.length === 1 ? 'παράμετρο' : 'παραμέτρους'
+        } διαδικασίας αλλά έλαβα ${node.args.length}`,
       );
     }
   }
 
   public visitAssignment(node: AST.AssignmentAST): void {
-    node.children.forEach(this.visit.bind(this));
+    if (node.left instanceof VariableAST) {
+      this.visitVariable(node.left, true);
+    } else {
+      this.visit(node.left);
+    }
+    this.visit(node.right);
   }
   public visitEmpty(node: AST.EmptyAST): void {
     node.children.forEach(this.visit.bind(this));
@@ -224,10 +309,13 @@ export default class SymbolBuilder extends AST.ASTVisitor<PSISymbol.PSISymbol | 
   public visitIf(node: AST.IfAST): void {
     node.children.forEach(this.visit.bind(this));
   }
-  public visitChar(node: AST.CharAST): void {
+  public visitExponentiation(node: AST.ExponentiationAST): void {
     node.children.forEach(this.visit.bind(this));
   }
-  public visitCharConstant(node: AST.CharConstantAST): void {
+  public visitString(node: AST.StringAST): void {
+    node.children.forEach(this.visit.bind(this));
+  }
+  public visitStringConstant(node: AST.StringConstantAST): void {
     node.children.forEach(this.visit.bind(this));
   }
   public visitAnd(node: AST.AndAST): void {
@@ -257,5 +345,17 @@ export default class SymbolBuilder extends AST.ASTVisitor<PSISymbol.PSISymbol | 
 
   public visitArrayAccess(node: AST.ArrayAccessAST) {
     node.children.forEach(this.visit.bind(this));
+  }
+
+  public visitRead(node: AST.ReadAST) {
+    node.children.forEach(this.visit.bind(this));
+  }
+
+  public visitWrite(node: AST.WriteAST) {
+    node.children.forEach(this.visit.bind(this));
+  }
+
+  public run() {
+    return this.visit(this.ast);
   }
 }

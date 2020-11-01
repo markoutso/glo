@@ -1,0 +1,14 @@
+import { GLODataType, GLOReal } from '@glossa-glo/data-types';
+import LibraryFunction from './LibraryFunction';
+
+export default new LibraryFunction(
+  'ΗΜ',
+  [{ args: [['μοίρες', GLOReal]], returnType: GLOReal }],
+  (args: GLODataType[]) => {
+    const value = (args[0] as GLOReal).value;
+
+    const degrees = (value * Math.PI) / 180;
+
+    return new GLOReal(Math.sin(degrees));
+  },
+);

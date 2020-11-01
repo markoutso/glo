@@ -1,5 +1,6 @@
-import { TypeAST } from '.';
-import { createPSIArray } from '@pascal-psi/data-types';
+import TypeAST from './TypeAST';
+import { createGLOArray, GLODataType } from '@glossa-glo/data-types';
+import AST from './AST';
 
 export default class ArrayAST extends TypeAST {
   get dataType() {
@@ -9,22 +10,17 @@ export default class ArrayAST extends TypeAST {
       );
     }
 
-    for (const indexType of this.indexTypes) {
-      if (!indexType.dataType) {
-        throw new Error(
-          'Program error: Could not calculate ArrayAST data type: an index type had no data type',
-        );
-      }
-    }
-
-    return createPSIArray(
-      this.indexTypes.map(indexType => indexType.dataType),
+    return createGLOArray(
       this.componentType.dataType,
+      this.dimensionLength.length,
     );
   }
 
-  constructor(public indexTypes: TypeAST[], public componentType: TypeAST) {
+  constructor(
+    public readonly dimensionLength: AST[],
+    public readonly componentType: TypeAST,
+  ) {
     super();
-    this.addChild(...indexTypes, componentType);
+    this.addChild(componentType);
   }
 }

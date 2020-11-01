@@ -2,6 +2,6 @@
 
 const lexer = require('..');
 
-describe('@pascal-psi/lexer', () => {
-    it('needs tests');
+describe('@glossa-glo/lexer', () => {
+  it('needs tests');
 });

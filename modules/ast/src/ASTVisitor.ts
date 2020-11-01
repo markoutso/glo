@@ -1,11 +1,9 @@
 import * as AST from './AST';
-import Runnable from './Runnable';
-import PSIError from '@pascal-psi/error';
-export default abstract class ASTVisitor<T = unknown> implements Runnable<T> {
+import GLOError from '@glossa-glo/error';
+
+export default abstract class ASTVisitor<T = unknown> {
   protected abstract readonly ast: AST.AST;
   public abstract visitAssignment(node: AST.AssignmentAST): T;
-  public abstract visitBlock(node: AST.BlockAST): T;
-  public abstract visitCompound(node: AST.CompoundAST): T;
   public abstract visitEmpty(node: AST.EmptyAST): T;
   public abstract visitInteger(node: AST.IntegerAST): T;
   public abstract visitIntegerConstant(node: AST.IntegerConstantAST): T;
@@ -34,12 +32,13 @@ export default abstract class ASTVisitor<T = unknown> implements Runnable<T> {
   public abstract visitGreaterEquals(node: AST.GreaterEqualsAST): T;
   public abstract visitLessEquals(node: AST.LessEqualsAST): T;
   public abstract visitIf(node: AST.IfAST): T;
-  public abstract visitChar(node: AST.CharAST): T;
-  public abstract visitCharConstant(node: AST.CharConstantAST): T;
+  public abstract visitString(node: AST.StringAST): T;
+  public abstract visitStringConstant(node: AST.StringConstantAST): T;
   public abstract visitAnd(node: AST.AndAST): T;
   public abstract visitOr(node: AST.OrAST): T;
   public abstract visitNot(node: AST.NotAST): T;
-  public abstract visitCall(node: AST.CallAST): T;
+  public abstract visitFunctionCall(node: AST.FunctionCallAST): T;
+  public abstract visitProcedureCall(node: AST.ProcedureCallAST): T;
   public abstract visitFor(node: AST.ForAST): T;
   public abstract visitWhile(node: AST.WhileAST): T;
   public abstract visitRepeat(node: AST.RepeatAST): T;
@@ -48,20 +47,23 @@ export default abstract class ASTVisitor<T = unknown> implements Runnable<T> {
   public abstract visitArray(node: AST.ArrayAST): T;
   public abstract visitArrayAccess(node: AST.ArrayAccessAST): T;
   public abstract visitFunctionDeclaration(node: AST.FunctionDeclarationAST): T;
+  public abstract visitRead(node: AST.ReadAST): T;
+  public abstract visitWrite(node: AST.WriteAST): T;
+  public abstract visitExponentiation(node: AST.ExponentiationAST): T;
 
   public visitConstant(node: AST.ConstantAST): T {
     if (node instanceof AST.IntegerConstantAST) {
       return this.visitIntegerConstant(node);
     } else if (node instanceof AST.RealConstantAST) {
       return this.visitRealConstant(node);
-    } else if (node instanceof AST.CharConstantAST) {
-      return this.visitCharConstant(node);
+    } else if (node instanceof AST.StringConstantAST) {
+      return this.visitStringConstant(node);
     } else if (node instanceof AST.TrueConstantAST) {
       return this.visitTrue(node);
     } else if (node instanceof AST.FalseConstantAST) {
       return this.visitFalse(node);
     } else {
-      throw new PSIError(
+      throw new GLOError(
         node,
         'Program error: Unknown constant AST node type on visitor',
       );
@@ -71,12 +73,8 @@ export default abstract class ASTVisitor<T = unknown> implements Runnable<T> {
   public visit(node: AST.AST): T {
     if (node instanceof AST.AssignmentAST) {
       return this.visitAssignment(node);
-    } else if (node instanceof AST.BlockAST) {
-      return this.visitBlock(node);
     } else if (node instanceof AST.BooleanAST) {
       return this.visitBoolean(node);
-    } else if (node instanceof AST.CompoundAST) {
-      return this.visitCompound(node);
     } else if (node instanceof AST.EmptyAST) {
       return this.visitEmpty(node);
     } else if (node instanceof AST.IntegerAST) {
@@ -129,18 +127,20 @@ export default abstract class ASTVisitor<T = unknown> implements Runnable<T> {
       return this.visitLessEquals(node);
     } else if (node instanceof AST.IfAST) {
       return this.visitIf(node);
-    } else if (node instanceof AST.CharAST) {
-      return this.visitChar(node);
-    } else if (node instanceof AST.CharConstantAST) {
-      return this.visitCharConstant(node);
+    } else if (node instanceof AST.StringAST) {
+      return this.visitString(node);
+    } else if (node instanceof AST.StringConstantAST) {
+      return this.visitStringConstant(node);
     } else if (node instanceof AST.AndAST) {
       return this.visitAnd(node);
     } else if (node instanceof AST.OrAST) {
       return this.visitOr(node);
     } else if (node instanceof AST.NotAST) {
       return this.visitNot(node);
-    } else if (node instanceof AST.CallAST) {
-      return this.visitCall(node);
+    } else if (node instanceof AST.FunctionCallAST) {
+      return this.visitFunctionCall(node);
+    } else if (node instanceof AST.ProcedureCallAST) {
+      return this.visitProcedureCall(node);
     } else if (node instanceof AST.ForAST) {
       return this.visitFor(node);
     } else if (node instanceof AST.WhileAST) {
@@ -155,15 +155,17 @@ export default abstract class ASTVisitor<T = unknown> implements Runnable<T> {
       return this.visitArrayAccess(node);
     } else if (node instanceof AST.FunctionDeclarationAST) {
       return this.visitFunctionDeclaration(node);
+    } else if (node instanceof AST.ReadAST) {
+      return this.visitRead(node);
+    } else if (node instanceof AST.WriteAST) {
+      return this.visitWrite(node);
+    } else if (node instanceof AST.ExponentiationAST) {
+      return this.visitExponentiation(node);
     } else {
-      throw new PSIError(
+      throw new GLOError(
         node,
         `Program error: Unknown AST node type on visitor ${node.constructor.name}`,
       );
     }
-  }
-
-  public run() {
-    return this.visit(this.ast);
   }
 }

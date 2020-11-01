@@ -1,0 +1,110 @@
+// Based on pascal.js (https://github.com/codemirror/CodeMirror/blob/master/mode/pascal/pascal.js)
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: https://codemirror.net/LICENSE
+
+// copyright (c) by Komninos Chatzipapas
+
+// TODO: Move to separate module, take CodeMirror as parameter, toUpperCaseNormalizedGreek, idRegex from modules
+
+import { CodeMirror } from 'vue-codemirror'
+
+// From CaseInsensitiveMap
+function toUpperCaseNormalizedGreek(s) {
+  return s
+    .toUpperCase()
+    .replace(/Ά/g, 'Α')
+    .replace(/Έ/g, 'Ε')
+    .replace(/Ή/g, 'Η')
+    .replace(/Ί|Ϊ|Ϊ́/g, 'Ι')
+    .replace(/Ό/g, 'Ο')
+    .replace(/Ύ|Ϋ|Ϋ́/g, 'Υ')
+    .replace(/Ώ/g, 'Ω');
+}
+
+CodeMirror.defineMode("glossa", function() {
+  function words(str) {
+    var obj = {}, words = str.split(" ");
+    for (var i = 0; i < words.length; ++i) obj[words[i]] = true;
+    return obj;
+  }
+  var keywords = words(
+    "ΠΡΟΓΡΑΜΜΑ ΜΕΤΑΒΛΗΤΕΣ ΑΡΧΗ ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ DIV ΑΚΕΡΑΙΕΣ ΠΡΑΓΜΑΤΙΚΕΣ " +
+    "ΔΙΑΔΙΚΑΣΙΑ ΑΛΗΘΗΣ ΨΕΥΔΗΣ ΛΟΓΙΚΕΣ ΑΝ ΤΟΤΕ ΑΛΛΙΩΣ ΧΑΡΑΚΤΗΡΕΣ ΚΑΙ Η ΟΧΙ " +
+    "ΓΙΑ ΤΟ ΑΠΟ ΜΕΧΡΙ ΕΠΑΝΑΛΑΒΕ ΟΣΟ ΑΡΧΗ_ΕΠΑΝΑΛΗΨΗΣ ΜΕΧΡΙΣ_ΟΤΟΥ ΣΥΝΑΡΤΗΣΗ " +
+    "ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ ΜΕ_ΒΗΜΑ ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ ΚΑΛΕΣΕ " +
+    "ΔΙΑΒΑΣΕ ΓΡΑΨΕ ΑΛΛΙΩΣ_ΑΝ ΤΕΛΟΣ_ΑΝ ΑΚΕΡΑΙΑ ΛΟΓΙΚΗ ΠΡΑΓΜΑΤΙΚΗ ΧΑΡΑΚΤΗΡΑΣ " +
+    "ΕΠΙΛΕΞΕ ΠΕΡΙΠΤΩΣΗ ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ MOD");
+  var atoms = {};
+
+  var isOperatorChar = /[+\-*^=<>!?|\/]/;
+
+  function tokenBase(stream, state) {
+    var ch = stream.next();
+    if (ch == "'") {
+      state.tokenize = tokenString(ch);
+      return state.tokenize(stream, state);
+    }
+    if (ch == "!") {
+      stream.skipToEnd();
+      return "comment";
+    }
+    if (/[\[\]\(\),\:]/.test(ch)) {
+      return null;
+    }
+    if (/\d/.test(ch)) {
+      stream.eatWhile(/[\w\.]/);
+      return "number";
+    }
+    if (isOperatorChar.test(ch)) {
+      stream.eatWhile(isOperatorChar);
+      return "operator";
+    }
+    stream.eatWhile(/[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z0-9_]/);
+    var cur = toUpperCaseNormalizedGreek(stream.current());
+    if (keywords.propertyIsEnumerable(cur)) return "keyword";
+    if (atoms.propertyIsEnumerable(cur)) return "atom";
+    return "variable";
+  }
+
+  function tokenString(quote) {
+    return function(stream, state) {
+      var next, end = false;
+      while ((next = stream.next()) != null) {
+        if (next == quote) {end = true; break;}
+      }
+      if (end) state.tokenize = null;
+      return "string";
+    };
+  }
+
+  function tokenComment(stream, state) {
+    var ch;
+    while (ch = stream.next()) {
+      console.log('ch', ch, ch == '\n')
+      if (ch == "\n") {
+        state.tokenize = null;
+        break;
+      }
+    }
+    return "comment";
+  }
+
+  // Interface
+
+  return {
+    startState: function() {
+      return {tokenize: null};
+    },
+
+    token: function(stream, state) {
+      if (stream.eatSpace()) return null;
+      var style = (state.tokenize || tokenBase)(stream, state);
+      if (style == "comment" || style == "meta") return style;
+      return style;
+    },
+
+    // electricChars: "{}"
+  };
+});
+
+CodeMirror.defineMIME("text/x-glossa", "glossa");

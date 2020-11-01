@@ -1,12 +1,12 @@
-import { DebugInfoProvider } from '@pascal-psi/error';
-import { PSIDataType } from '@pascal-psi/data-types';
+import { DebugInfoProvider } from '@glossa-glo/error';
+import { GLODataType } from '@glossa-glo/data-types';
 
 export default abstract class AST extends DebugInfoProvider {
   constructor(..._: any[]) {
     super();
   }
 
-  public promote?: Map<typeof PSIDataType, () => AST>;
+  public promote?: Map<typeof GLODataType, () => AST>;
 
   protected readonly _children: AST[] = [];
   public parent: AST | null = null;

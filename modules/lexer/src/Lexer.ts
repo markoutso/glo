@@ -1,54 +1,70 @@
 import * as Token from './token';
-import CaseInsensitiveMap from '@pascal-psi/case-insensitive-map';
-import * as Types from '@pascal-psi/data-types';
-import PSIError, { DebugInfoProvider } from '@pascal-psi/error';
+import CaseInsensitiveMap from '@glossa-glo/case-insensitive-map';
+import * as Types from '@glossa-glo/data-types';
+import GLOError, { DebugInfoProvider } from '@glossa-glo/error';
 
 export class Lexer {
-  protected readonly reservedKeywords = new CaseInsensitiveMap<
+  public static readonly reservedKeywords = new CaseInsensitiveMap<
     string,
     () => Token.Token
   >([
-    ['PROGRAM', () => new Token.ProgramToken()],
-    ['VAR', () => new Token.VariableToken()],
-    ['BEGIN', () => new Token.BeginToken()],
-    ['END', () => new Token.EndToken()],
+    ['ΠΡΟΓΡΑΜΜΑ', () => new Token.ProgramToken()],
+    ['ΜΕΤΑΒΛΗΤΕΣ', () => new Token.VariableToken()],
+    ['ΑΡΧΗ', () => new Token.BeginToken()],
+    ['ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ', () => new Token.ProgramEndToken()],
     ['DIV', () => new Token.IntegerDivisionToken()],
-    ['INTEGER', () => new Token.IntegerToken()],
-    ['REAL', () => new Token.RealToken()],
-    ['PROCEDURE', () => new Token.ProcedureToken()],
-    ['TRUE', () => new Token.TrueToken()],
-    ['FALSE', () => new Token.FalseToken()],
-    ['BOOLEAN', () => new Token.BooleanToken()],
-    ['IF', () => new Token.IfToken()],
-    ['THEN', () => new Token.ThenToken()],
-    ['ELSE', () => new Token.ElseToken()],
-    ['CHAR', () => new Token.CharToken()],
-    ['AND', () => new Token.AndToken()],
-    ['OR', () => new Token.OrToken()],
-    ['NOT', () => new Token.NotToken()],
-    ['FOR', () => new Token.ForToken()],
+    ['ΑΚΕΡΑΙΕΣ', () => new Token.IntegerToken()],
+    ['ΠΡΑΓΜΑΤΙΚΕΣ', () => new Token.RealToken()],
+    ['ΔΙΑΔΙΚΑΣΙΑ', () => new Token.ProcedureToken()],
+    ['ΑΛΗΘΗΣ', () => new Token.TrueToken()],
+    ['ΨΕΥΔΗΣ', () => new Token.FalseToken()],
+    ['ΛΟΓΙΚΕΣ', () => new Token.BooleanToken()],
+    ['ΑΝ', () => new Token.IfToken()],
+    ['ΤΟΤΕ', () => new Token.ThenToken()],
+    ['ΑΛΛΙΩΣ', () => new Token.ElseToken()],
+    ['ΧΑΡΑΚΤΗΡΕΣ', () => new Token.StringToken()],
+    ['ΚΑΙ', () => new Token.AndToken()],
+    ['Η', () => new Token.OrToken()],
+    ['ΟΧΙ', () => new Token.NotToken()],
+    ['ΓΙΑ', () => new Token.ForToken()],
     ['TO', () => new Token.ToToken()],
-    ['DOWNTO', () => new Token.DownToToken()],
-    ['DO', () => new Token.DoToken()],
-    ['WHILE', () => new Token.WhileToken()],
-    ['REPEAT', () => new Token.RepeatToken()],
-    ['UNTIL', () => new Token.UntilToken()],
-    ['ARRAY', () => new Token.ArrayToken()],
-    ['OF', () => new Token.OfToken()],
-    ['FUNCTION', () => new Token.FunctionToken()],
+    ['ΑΠΟ', () => new Token.FromToken()],
+    ['ΜΕΧΡΙ', () => new Token.ToToken()],
+    ['ΕΠΑΝΑΛΑΒΕ', () => new Token.DoToken()],
+    ['ΟΣΟ', () => new Token.WhileToken()],
+    ['ΑΡΧΗ_ΕΠΑΝΑΛΗΨΗΣ', () => new Token.RepeatToken()],
+    ['ΜΕΧΡΙΣ_ΟΤΟΥ', () => new Token.UntilToken()],
+    ['ΣΥΝΑΡΤΗΣΗ', () => new Token.FunctionToken()],
+    ['ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ', () => new Token.LoopEndToken()],
+    ['ΜΕ_ΒΗΜΑ', () => new Token.WithStepToken()],
+    ['ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ', () => new Token.FunctionEndToken()],
+    ['ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ', () => new Token.ProcedureEndToken()],
+    ['ΚΑΛΕΣΕ', () => new Token.CallToken()],
+    ['ΔΙΑΒΑΣΕ', () => new Token.ReadToken()],
+    ['ΓΡΑΨΕ', () => new Token.WriteToken()],
+    ['ΑΛΛΙΩΣ_ΑΝ', () => new Token.ElseIfToken()],
+    ['ΤΕΛΟΣ_ΑΝ', () => new Token.EndIfToken()],
+    ['ΑΚΕΡΑΙΑ', () => new Token.IntegerSingularToken()],
+    ['ΠΡΑΓΜΑΤΙΚΗ', () => new Token.RealSingularToken()],
+    ['ΛΟΓΙΚΗ', () => new Token.BooleanSingularToken()],
+    ['ΧΑΡΑΚΤΗΡΑΣ', () => new Token.StringSingularToken()],
+    ['ΕΠΙΛΕΞΕ', () => new Token.SelectToken()],
+    ['ΠΕΡΙΠΤΩΣΗ', () => new Token.CaseToken()],
+    ['ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ', () => new Token.SelectEndToken()],
+    ['MOD', () => new Token.ModToken()],
   ]);
 
   private readonly numberRegex = /^\d$/;
-  private readonly idFistCharacterRegex = /^[a-zA-Z_]$/;
-  private readonly idRegex = /^[a-zA-Z0-9_]$/;
-  private readonly whitespaceRegex = /^\s$/;
+  private readonly idFirstCharacterRegex = /^[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z_]$/;
+  private readonly idRegex = /^[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z0-9_]$/;
+  private readonly whitespaceRegex = /^[^\S\n]$/;
 
   private sourceCode: string;
   private position: number;
   private currentCharacter: string | null;
 
   public get linePosition(): number {
-    return this.sourceCode.slice(0, this.position).split('\n').length;
+    return this.sourceCode.slice(0, this.position).split('\n').length - 1;
   }
 
   public get characterPosition(): number {
@@ -100,32 +116,17 @@ export class Lexer {
       this.currentCharacter !== null &&
       this.currentCharacter.match(this.whitespaceRegex)
     ) {
-      this.currentCharacter = this.currentCharacter = this.advance();
+      this.currentCharacter = this.advance();
     }
   }
 
   private comment() {
-    const startPosition = {
-      linePosition: this.linePosition,
-      characterPosition: this.characterPosition,
-    };
-
-    while (
-      this.currentCharacter != '}' &&
-      (this.currentCharacter != '*' || this.peek() != ')')
-    ) {
-      if (this.currentCharacter === null) {
-        throw new PSIError(
-          {
-            start: startPosition,
-            end: this,
-          },
-          'Could not find closing comment bracket',
-        );
-      }
+    while (this.currentCharacter != '\n' && this.currentCharacter != null) {
       this.currentCharacter = this.advance();
     }
-    this.currentCharacter = this.advance(this.currentCharacter == '}' ? 1 : 3);
+    if (this.currentCharacter === '\n') {
+      this.currentCharacter = this.advance();
+    }
   }
 
   private number() {
@@ -157,11 +158,11 @@ export class Lexer {
         this.currentCharacter = this.advance();
       }
 
-      return new Token.RealConstToken(new Types.PSIReal(parseFloat(number)))
+      return new Token.RealConstToken(new Types.GLOReal(parseFloat(number)))
         .inheritStartPositionFrom(startPosition)
         .inheritEndPositionFrom(this);
     } else {
-      return new Token.IntegerConstToken(new Types.PSIInteger(parseInt(number)))
+      return new Token.IntegerConstToken(new Types.GLOInteger(parseInt(number)))
         .inheritStartPositionFrom(startPosition)
         .inheritEndPositionFrom(this);
     }
@@ -180,8 +181,8 @@ export class Lexer {
       id += this.currentCharacter;
       this.currentCharacter = this.advance();
     }
-    if (this.reservedKeywords.has(id)) {
-      return (this.reservedKeywords.get(id) as () => Token.Token)()
+    if (Lexer.reservedKeywords.has(id)) {
+      return (Lexer.reservedKeywords.get(id) as () => Token.Token)()
         .inheritStartPositionFrom(startPosition)
         .inheritEndPositionFrom(this);
     } else {
@@ -191,29 +192,42 @@ export class Lexer {
     }
   }
 
-  private characterConstant() {
-    if (this.currentCharacter === null) {
-      throw new PSIError(
-        {
-          start: this,
-          end: this,
-        },
-        'Invalid character constant',
-      );
+  private stringConstant() {
+    let str = '';
+
+    const startPosition = {
+      start: {
+        linePosition: this.linePosition,
+        characterPosition: this.characterPosition - 1,
+      },
+      end: {
+        linePosition: this.linePosition,
+        characterPosition: this.characterPosition - 1,
+      },
+    };
+
+    while (this.currentCharacter != "'") {
+      if (this.currentCharacter === null) {
+        throw new GLOError(startPosition, 'Η σταθερά χαρακτήρων δεν τελειώνει');
+      }
+
+      str += this.currentCharacter;
+      this.currentCharacter = this.advance();
     }
-    const character = this.currentCharacter;
-    this.currentCharacter = this.advance();
+
     if (this.currentCharacter != "'") {
-      throw new PSIError(
+      throw new GLOError(
         {
           start: this,
           end: this,
         },
-        'Invalid character constant',
+        'Μη-έγκυρη σταθερά χαρακτήρων',
       );
     }
+
     this.currentCharacter = this.advance();
-    return new Token.CharConstantToken(new Types.PSIChar(character))
+
+    return new Token.StringConstantToken(new Types.GLOString(str))
       .inheritStartPositionFrom(this)
       .inheritEndPositionFrom(this);
   }
@@ -232,20 +246,17 @@ export class Lexer {
       if (this.currentCharacter.match(this.whitespaceRegex)) {
         this.whitespace();
         continue;
-      } else if (
-        this.currentCharacter == '{' ||
-        (this.currentCharacter == '(' && this.peek() == '*')
-      ) {
+      } else if (this.currentCharacter == '!') {
         this.comment();
         continue;
-      } else if (this.currentCharacter == ':' && this.peek() == '=') {
+      } else if (this.currentCharacter == '<' && this.peek() == '-') {
         this.currentCharacter = this.advance(2);
         return new Token.AssignToken()
           .inheritStartPositionFrom(this.getPositionMinus(2))
           .inheritEndPositionFrom(this);
-      } else if (this.currentCharacter == ';') {
+      } else if (this.currentCharacter == '\n') {
         this.currentCharacter = this.advance();
-        return new Token.SemiToken()
+        return new Token.NewLineToken()
           .inheritStartPositionFrom(this.getPositionMinus(1))
           .inheritEndPositionFrom(this);
       } else if (this.currentCharacter == '+') {
@@ -261,11 +272,6 @@ export class Lexer {
       } else if (this.currentCharacter == '*') {
         this.currentCharacter = this.advance();
         return new Token.MultiplicationToken()
-          .inheritStartPositionFrom(this.getPositionMinus(1))
-          .inheritEndPositionFrom(this);
-      } else if (this.currentCharacter == '%') {
-        this.currentCharacter = this.advance();
-        return new Token.ModToken()
           .inheritStartPositionFrom(this.getPositionMinus(1))
           .inheritEndPositionFrom(this);
       } else if (this.currentCharacter == '/') {
@@ -347,20 +353,25 @@ export class Lexer {
           .inheritEndPositionFrom(this);
       } else if (this.currentCharacter == "'") {
         this.currentCharacter = this.advance();
-        return this.characterConstant()
+        return this.stringConstant()
+          .inheritStartPositionFrom(this.getPositionMinus(1))
+          .inheritEndPositionFrom(this);
+      } else if (this.currentCharacter == '^') {
+        this.currentCharacter = this.advance();
+        return new Token.ExponentiationToken()
           .inheritStartPositionFrom(this.getPositionMinus(1))
           .inheritEndPositionFrom(this);
       } else if (this.currentCharacter.match(this.numberRegex)) {
         return this.number();
-      } else if (this.currentCharacter.match(this.idFistCharacterRegex)) {
+      } else if (this.currentCharacter.match(this.idFirstCharacterRegex)) {
         return this.id();
       } else {
-        throw new PSIError(
+        throw new GLOError(
           {
             start: this,
             end: this,
           },
-          `Undefined token '${this.currentCharacter}'`,
+          `Μη-δεκτός χαρακτήρας '${this.currentCharacter}'`,
         );
       }
     }

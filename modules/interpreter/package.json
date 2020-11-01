@@ -1,9 +1,9 @@
 {
-  "name": "@pascal-psi/interpreter",
-  "version": "0.0.2",
-  "description": "PSI interpreter",
+  "name": "@glossa-glo/interpreter",
+  "version": "1.0.0-beta",
+  "description": "GLO interpreter",
   "author": "komninoschat <komninoschat@gmail.com>",
-  "homepage": "https://github.com/komninoschat/psi#readme",
+  "homepage": "https://github.com/komninoschat/glo#readme",
   "publishConfig": {
     "access": "public"
   },
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/komninoschat/psi.git"
+    "url": "git+https://github.com/komninoschat/glo.git"
   },
   "scripts": {
     "prepare": "tsc",
@@ -26,14 +26,14 @@
     "test-cover": "cross-env NODE_ENV=development nyc mocha \"./__tests__/**/*.test.ts\" -- --opts=__tests__/mocha.opts"
   },
   "bugs": {
-    "url": "https://github.com/komninoschat/psi/issues"
+    "url": "https://github.com/komninoschat/glo/issues"
   },
   "dependencies": {
-    "@pascal-psi/ast": "^0.0.2",
-    "@pascal-psi/case-insensitive-map": "^0.0.2",
-    "@pascal-psi/data-types": "^0.0.2",
-    "@pascal-psi/error": "^0.0.2",
-    "@pascal-psi/symbol": "^0.0.2"
+    "@glossa-glo/ast": "^1.0.0-beta",
+    "@glossa-glo/case-insensitive-map": "^1.0.0-beta",
+    "@glossa-glo/data-types": "^1.0.0-beta",
+    "@glossa-glo/error": "^1.0.0-beta",
+    "@glossa-glo/symbol": "^1.0.0-beta"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",

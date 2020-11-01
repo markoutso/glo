@@ -1,16 +1,16 @@
 {
-  "name": "@pascal-psi/cli",
-  "version": "0.0.2",
-  "description": "PSI cli",
+  "name": "@glossa-glo/cli",
+  "version": "1.0.0-beta",
+  "description": "GLO cli",
   "author": "komninoschat <komninoschat@gmail.com>",
-  "homepage": "https://github.com/komninoschat/psi#readme",
+  "homepage": "https://github.com/komninoschat/glo#readme",
   "publishConfig": {
     "access": "public"
   },
   "license": "MIT",
   "main": "lib/cli.js",
   "bin": {
-    "psi": "bin/run"
+    "glo": "bin/run"
   },
   "directories": {
     "lib": "lib",
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/komninoschat/psi.git"
+    "url": "git+https://github.com/komninoschat/glo.git"
   },
   "scripts": {
     "prepare": "tsc",
@@ -29,7 +29,7 @@
     "test-cover": "cross-env NODE_ENV=development nyc mocha \"./__tests__/**/*.test.ts\" -- --opts=__tests__/mocha.opts"
   },
   "bugs": {
-    "url": "https://github.com/komninoschat/psi/issues"
+    "url": "https://github.com/komninoschat/glo/issues"
   },
   "dependencies": {
     "@oclif/command": "^1.5.18",
@@ -37,14 +37,8 @@
     "@oclif/plugin-help": "^2.2.1",
     "@oclif/test": "^1.2.5",
     "@oclif/tslint": "^3.1.1",
-    "@pascal-psi/ast": "^0.0.2",
-    "@pascal-psi/error": "^0.0.2",
-    "@pascal-psi/interpreter": "^0.0.2",
-    "@pascal-psi/lexer": "^0.0.2",
-    "@pascal-psi/library": "^0.0.2",
-    "@pascal-psi/parser": "^0.0.2",
-    "@pascal-psi/semantic-analyzer": "^0.0.2",
-    "@pascal-psi/symbol": "^0.0.2",
+    "@glossa-glo/error": "^1.0.0-beta",
+    "@glossa-glo/glo": "^1.0.0-beta",
     "chalk": "^4.1.0",
     "cli-ux": "^5.4.9",
     "tslib": "^1.10.0"

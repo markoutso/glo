@@ -1,11 +1,11 @@
-import { AST } from '.';
+import AST from './AST';
 
 export default class RepeatAST extends AST {
   constructor(
     public readonly condition: AST,
-    public readonly statements: AST[],
+    public readonly statementList: AST[],
   ) {
     super();
-    this.addChild(condition, ...statements);
+    this.addChild(condition, ...statementList);
   }
 }

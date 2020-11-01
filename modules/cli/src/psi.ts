@@ -1,26 +1,21 @@
 import { Command, flags } from '@oclif/command';
 import { readFileSync } from 'fs';
-import { Lexer } from '@pascal-psi/lexer';
-import { Parser } from '@pascal-psi/parser';
-import { Interpreter } from '@pascal-psi/interpreter';
-import { SymbolBuilder, TypeChecker } from '@pascal-psi/semantic-analyzer';
-import { BaseSymbolScope } from '@pascal-psi/symbol';
-import { RunnableChain } from '@pascal-psi/ast';
-import injectLibraryToScope from '@pascal-psi/library';
-import PSIError from '@pascal-psi/error';
+import interpret from '@glossa-glo/glo';
+import GLOError from '@glossa-glo/error';
 import chalk from 'chalk';
 import cli from 'cli-ux';
 import { basename } from 'path';
+import readline from 'readline';
 
-function formatError(sourceCode: string, fileName: string, error: PSIError) {
+function formatError(sourceCode: string, fileName: string, error: GLOError) {
   const header =
     chalk.bold(
       fileName +
         (error.start.linePosition !== -1 && error.start.characterPosition !== -1
-          ? `:${error.start.linePosition}:${error.start.characterPosition}:`
+          ? `:${error.start.linePosition + 1}:${error.start.characterPosition}:`
           : ':') +
         ' ' +
-        chalk.redBright('Error:') +
+        chalk.redBright('Σφάλμα:') +
         ' ' +
         error.message,
     ) + '\n\n';
@@ -33,16 +28,16 @@ function formatError(sourceCode: string, fileName: string, error: PSIError) {
     error.end.characterPosition === -1 ||
     error.end.linePosition === -1
   ) {
-    codeLine = '<No line information was included>';
+    codeLine = '<Καμία πληροφορία τοποθεσίας δεν δόθηκε>';
   } else if (error.start.linePosition === error.end.linePosition) {
     codeLine =
-      sourceCode.split('\n')[error.start.linePosition - 1] +
+      sourceCode.split('\n')[error.start.linePosition] +
       '\n' +
       ' '.repeat(error.start.characterPosition) +
       chalk.bold(
         chalk.blueBright(
           `^`.repeat(
-            error.end.characterPosition - error.start.characterPosition || 1,
+            error.end.characterPosition - error.start.characterPosition,
           ),
         ),
       );
@@ -58,7 +53,7 @@ function formatError(sourceCode: string, fileName: string, error: PSIError) {
 }
 
 class Psi extends Command {
-  static description = 'Interpret Pascal code';
+  static description = 'Διερμηνευτής της Γλώσσας';
 
   static flags = {
     version: flags.version({ char: 'v' }),
@@ -67,19 +62,21 @@ class Psi extends Command {
 
   static args = [
     {
-      name: 'file',
+      name: 'αρχείο',
       required: false,
-      description: 'Input file path',
+      description: 'Μονοπάτι αρχείου πηγαίου κώδικα',
     },
   ];
 
   async run() {
     const { args, flags } = this.parse(Psi);
 
-    let file: string = args.file;
+    let file: string = args['αρχείο'];
 
     if (!file) {
-      file = await cli.prompt('Please specify the file to interpret:');
+      file = await cli.prompt(
+        'Παρακαλώ γράψε το μονοπάτι του αρχείου του πηγαίου κώδικα:',
+      );
     }
 
     let sourceCode = '';
@@ -87,25 +84,33 @@ class Psi extends Command {
       sourceCode = readFileSync(file, 'utf8');
     } catch (error) {
       console.error(
-        'An error occured while attempting to read the source code file.\nPlease ensure the correct file path was provided and the appropriate permissions were set.\nError code: ' +
+        'Παρουσιάστικε σφάλμα όσο προσπαθούσα να διαβάσω το αρχείο πηγαίου κώδικα\nΠαρακαλώ σιγουρέψου πως έχεις δώσει το σωστό μονοπάτι\nΚωδικός σφάλματος: ' +
           error.code,
       );
       process.exit(1);
     }
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: false,
+    });
+
     try {
-      const lexer = new Lexer(sourceCode);
-      const tree = new Parser(lexer).run();
-      const baseScope = new BaseSymbolScope('root');
-      injectLibraryToScope(baseScope);
-      new RunnableChain(
-        new SymbolBuilder(tree, baseScope),
-        new TypeChecker(tree, baseScope),
-      ).run();
-      const interpreter = new Interpreter(tree, baseScope);
-      interpreter.run();
-      // console.log(
-      //   (interpreter.scope.children as any).values().next().value.value,
-      // );
+      await interpret(sourceCode, {
+        read: () => {
+          return new Promise((resolve, reject) => {
+            rl.question('', data => {
+              if (data) {
+                resolve(data.split(' '));
+              } else {
+                resolve([]);
+              }
+            });
+          });
+        },
+        write: (...data: string[]) => Promise.resolve(console.log(...data)),
+      });
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -113,10 +118,11 @@ class Psi extends Command {
 
       console.error(formatError(sourceCode, basename(file), error));
 
-      console.error('Program execution halted with error(s).');
+      console.error('Η εκτέλεση του προγράμματος διακόπηκε με λάθη');
 
       process.exit(1);
     }
+    rl.close();
   }
 }
 

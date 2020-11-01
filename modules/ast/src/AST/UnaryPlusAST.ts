@@ -1,3 +1,3 @@
-import { UnaryAST } from '.';
+import UnaryAST from './UnaryAST';
 
 export default class UnaryPlusAST extends UnaryAST {}

@@ -1,6 +1,6 @@
 import TypeAST from './TypeAST';
-import { PSIReal } from '@pascal-psi/data-types';
+import { GLOReal } from '@glossa-glo/data-types';
 
 export default class RealAST extends TypeAST {
-  dataType = PSIReal;
+  dataType = GLOReal;
 }

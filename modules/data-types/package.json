@@ -1,14 +1,14 @@
 {
-  "name": "@pascal-psi/data-types",
-  "version": "0.0.2",
-  "description": "PSI Data types",
+  "name": "@glossa-glo/data-types",
+  "version": "1.0.0-beta",
+  "description": "GLO Data types",
   "author": "komninoschat <komninoschat@gmail.com>",
-  "homepage": "https://github.com/komninoschat/psi#readme",
+  "homepage": "https://github.com/komninoschat/glo#readme",
   "publishConfig": {
     "access": "public"
   },
   "license": "MIT",
-  "main": "lib/PSIDataTypes.js",
+  "main": "lib/index.js",
   "directories": {
     "lib": "lib",
     "test": "__tests__"
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/komninoschat/psi.git"
+    "url": "git+https://github.com/komninoschat/glo.git"
   },
   "scripts": {
     "prepare": "tsc",
@@ -26,7 +26,10 @@
     "test-cover": "cross-env NODE_ENV=development nyc mocha \"./__tests__/**/*.test.ts\" -- --opts=__tests__/mocha.opts"
   },
   "bugs": {
-    "url": "https://github.com/komninoschat/psi/issues"
+    "url": "https://github.com/komninoschat/glo/issues"
+  },
+  "dependencies": {
+    "@glossa-glo/error": "^1.0.0-beta"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",

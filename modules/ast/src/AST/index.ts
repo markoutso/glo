@@ -1,11 +1,9 @@
 import AST from './AST';
 import BinaryAST from './BinaryAST';
-import CompoundAST from './CompoundAST';
 import EmptyAST from './EmptyAST';
 import IntegerAST from './IntegerAST';
 import UnaryAST from './UnaryAST';
 import VariableAST from './VariableAST';
-import BlockAST from './BlockAST';
 import RealAST from './RealAST';
 import VariableDeclarationAST from './VariableDeclarationAST';
 import TypeAST from './TypeAST';
@@ -33,29 +31,31 @@ import LessThanAST from './LessThanAST';
 import GreaterEqualsAST from './GreaterEqualsAST';
 import LessEqualsAST from './LessEqualsAST';
 import IfAST from './IfAST';
-import CharAST from './CharAST';
-import CharConstantAST from './CharConstantAST';
+import StringAST from './StringAST';
+import StringConstantAST from './StringConstantAST';
 import AndAST from './AndAST';
 import OrAST from './OrAST';
 import NotAST from './NotAST';
-import CallAST from './CallAST';
+import FunctionCallAST from './FunctionCallAST';
 import ForAST from './ForAST';
 import WhileAST from './WhileAST';
 import RepeatAST from './RepeatAST';
 import SubrangeAST from './SubrangeAST';
-import ArrayAST from './ArrayAST';
 import ArrayAccessAST from './ArrayAccessAST';
 import FunctionDeclarationAST from './FunctionDeclarationAST';
+import ReadAST from './ReadAST';
+import WriteAST from './WriteAST';
+import ProcedureCallAST from './ProcedureCallAST';
+import ArrayAST from './ArrayAST';
+import ExponentiationAST from './ExponentiationAST';
 
 export {
   AST,
   BinaryAST,
-  CompoundAST,
   EmptyAST,
   IntegerAST,
   UnaryAST,
   VariableAST,
-  BlockAST,
   RealAST,
   VariableDeclarationAST,
   TypeAST,
@@ -83,17 +83,21 @@ export {
   GreaterEqualsAST,
   LessEqualsAST,
   IfAST,
-  CharAST,
-  CharConstantAST,
+  StringAST,
+  StringConstantAST,
   AndAST,
   OrAST,
   NotAST,
-  CallAST,
   ForAST,
   WhileAST,
   RepeatAST,
   SubrangeAST,
-  ArrayAST,
   ArrayAccessAST,
   FunctionDeclarationAST,
+  ReadAST,
+  WriteAST,
+  FunctionCallAST,
+  ProcedureCallAST,
+  ArrayAST,
+  ExponentiationAST,
 };

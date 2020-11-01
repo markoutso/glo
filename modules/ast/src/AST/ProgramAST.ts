@@ -1,11 +1,20 @@
-import { AST } from '.';
-import { BlockAST } from '.';
+import AST from './AST';
+import FunctionDeclarationAST from './FunctionDeclarationAST';
+import ProcedureDeclarationAST from './ProcedureDeclarationAST';
+import VariableDeclarationAST from './VariableDeclarationAST';
 
 export default class ProgramAST extends AST {
-  public readonly name: string;
-  constructor(name: string, public block: BlockAST) {
+  constructor(
+    public readonly name: string,
+    public readonly declarations: (
+      | VariableDeclarationAST
+      | ProcedureDeclarationAST
+      | FunctionDeclarationAST
+    )[],
+    public readonly statementList: AST[],
+  ) {
     super();
-    this.addChild(block);
+    this.addChild(...declarations, ...statementList);
     this.name = name;
   }
 }

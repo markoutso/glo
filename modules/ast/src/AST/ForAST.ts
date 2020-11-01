@@ -1,14 +1,16 @@
-import { AST } from '.';
-import { AssignmentAST } from '.';
+import VariableAST from './VariableAST';
+import AST from './AST';
+import ArrayAccessAST from './ArrayAccessAST';
 
 export default class ForAST extends AST {
   constructor(
-    public readonly assignment: AssignmentAST,
-    public readonly increment: boolean,
-    public readonly finalValue: AST,
-    public readonly statement: AST,
+    public readonly counter: VariableAST | ArrayAccessAST,
+    public readonly startValue: AST,
+    public readonly endValue: AST,
+    public readonly step: AST,
+    public readonly statementList: AST[],
   ) {
     super();
-    this.addChild(assignment, finalValue, statement);
+    this.addChild(counter, step, startValue, endValue, ...statementList);
   }
 }

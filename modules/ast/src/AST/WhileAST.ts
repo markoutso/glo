@@ -1,8 +1,11 @@
-import { AST } from '.';
+import AST from './AST';
 
 export default class WhileAST extends AST {
-  constructor(public readonly condition: AST, public readonly statement: AST) {
+  constructor(
+    public readonly condition: AST,
+    public readonly statementList: AST[],
+  ) {
     super();
-    this.addChild(condition, statement);
+    this.addChild(condition, ...statementList);
   }
 }
