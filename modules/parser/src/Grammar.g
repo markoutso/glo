@@ -27,9 +27,11 @@ select_case
 
 select_statement
   : "ΕΠΙΛΕΞΕ" expression nl ("ΠΕΡΙΠΤΩΣΗ" select_case ("," select_case)* nl statement_list)* ("ΠΕΡΙΠΤΩΣΗ" "ΑΛΛΙΩΣ" nl statement_list)? "ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ"
+  ;
 
 subprogram_declarations
   : (procedure_declaration | function_declaration)*
+  ;
 
 variable_declaration
   : "ΜΕΤΑΒΛΗΤΕΣ" nl (type ":" variable([expression ("," expression)*]) ("," variable([expression ("," expression)*])?)* nl)+
