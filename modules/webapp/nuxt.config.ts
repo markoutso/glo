@@ -22,6 +22,9 @@ const config: Configuration = {
       },
     ],
   },
+  generate: {
+    fallback: true,
+  },
   loading: { color: '#fff' },
   css: ['reset-css'],
   plugins: ['./plugins/fullscreen.ts'],
