@@ -30,9 +30,9 @@
   },
   "dependencies": {
     "@glossa-glo/ast": "^1.0.0-beta",
+    "@glossa-glo/data-types": "^1.0.0-beta",
     "@glossa-glo/error": "^1.0.0-beta",
-    "@glossa-glo/lexer": "^1.0.0-beta",
-    "@glossa-glo/data-types": "^1.0.0-beta"
+    "@glossa-glo/lexer": "^1.0.0-beta"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",

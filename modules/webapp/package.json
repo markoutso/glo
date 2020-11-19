@@ -12,8 +12,8 @@
     "test": "exit 0"
   },
   "dependencies": {
-    "@glossa-glo/glo": "^1.0.0-beta",
     "@glossa-glo/error": "^1.0.0-beta",
+    "@glossa-glo/glo": "^1.0.0-beta",
     "@nuxt/typescript-build": "^0.6.6",
     "@nuxt/typescript-runtime": "^0.4.6",
     "@nuxtjs/axios": "^5.8.0",

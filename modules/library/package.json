@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@glossa-glo/data-types": "^1.0.0-beta",
-    "@glossa-glo/symbol": "^1.0.0-beta",
-    "@glossa-glo/error": "^1.0.0-beta"
+    "@glossa-glo/error": "^1.0.0-beta",
+    "@glossa-glo/symbol": "^1.0.0-beta"
   }
 }
