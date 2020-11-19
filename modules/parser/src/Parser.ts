@@ -26,7 +26,12 @@ export class Parser {
     };
   }
 
-  private eat(type: any, message?: string, previousTokenThrow = false) {
+  private eat(
+    type: any,
+    message?: string,
+    previousTokenThrow = false,
+    throwEntirePreviousToken = false,
+  ) {
     if (this.currentToken instanceof type) {
       if (!(this.currentToken instanceof Lexer.NewLineToken)) {
         this.previousToken = this.currentToken;
@@ -35,7 +40,9 @@ export class Parser {
     } else {
       throw new GLOError(
         previousTokenThrow
-          ? this.previousTokenEndLocationProvider
+          ? throwEntirePreviousToken
+            ? this.previousToken!
+            : this.previousTokenEndLocationProvider
           : this.currentToken,
         message ||
           `Expected ${this.currentToken.constructor.name} to be ${type.name}`,
@@ -96,7 +103,7 @@ export class Parser {
 
     this.currentToken = this.eat(
       Lexer.LoopEndToken,
-      'Περίμενα ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ μετά το σώμα επανάληψης',
+      'Περίμενα ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ στο τέλος δομής επανάληψης',
     );
 
     return new AST.WhileAST(condition, statementList).inheritPositionFrom(
@@ -145,7 +152,7 @@ export class Parser {
 
     this.currentToken = this.eat(
       Lexer.LoopEndToken,
-      'Περίμενα ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ μετά το σώμα επανάληψης',
+      'Περίμενα ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ στο τέλος δομής επανάληψης',
     );
 
     return new AST.ForAST(
@@ -374,6 +381,13 @@ export class Parser {
 
     this.nl('Περίμενα νέα γραμμή μετά από ΜΕΤΑΒΛΗΤΕΣ');
 
+    if (this.currentToken instanceof Lexer.BeginToken) {
+      throw new GLOError(
+        this.previousToken!,
+        'Περίμενα δήλωση μεταβλητών μετά από ΜΕΤΑΒΛΗΤΕΣ',
+      );
+    }
+
     const declarations: AST.VariableDeclarationAST[] = [];
 
     do {
@@ -401,6 +415,13 @@ export class Parser {
       }
 
       ids.forEach(d => declarations.push(d));
+
+      if (this.currentToken instanceof Lexer.IdToken) {
+        throw new GLOError(
+          this.previousToken!,
+          'Περίμενα κόμμα ανάμεσα από τις δηλώσεις δύο μεταβλητών',
+        );
+      }
 
       this.nl('Περίμενα νέα γραμμή μετά τη δήλωση μεταβλητών ενός τύπου');
     } while (
@@ -450,6 +471,15 @@ export class Parser {
         }
 
         params.push(this.variable());
+      }
+
+      if (this.currentToken instanceof Lexer.IdToken) {
+        throw new GLOError(
+          this.previousToken!,
+          `Περίμενα κόμμα ανάμεσα στις δηλώσεις δύο παραμέτρων ${
+            type === 'procedure' ? 'διαδικασίας' : 'συνάρτησης'
+          }`,
+        );
       }
     }
 
@@ -647,6 +677,13 @@ export class Parser {
 
     const subprogramDeclarations = this.subprogramDeclarations();
 
+    if (!(this.currentToken instanceof Lexer.EofToken)) {
+      throw new GLOError(
+        this.currentToken,
+        'Περίμενα ΔΙΑΔΙΚΑΣΙΑ ή ΣΥΝΑΡΤΗΣΗ μετά από ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ',
+      );
+    }
+
     return new AST.ProgramAST(
       programName,
       [...variableDeclarations, ...subprogramDeclarations],
@@ -824,7 +861,12 @@ export class Parser {
     }
 
     const assignmentToken = Object.assign({}, this.currentToken);
-    this.currentToken = this.eat(Lexer.AssignToken, 'Μη-έγκυρη εντολή', true); // Not enough information to determine whether user actually wanted an assignment statement
+    this.currentToken = this.eat(
+      Lexer.AssignToken,
+      'Μη-έγκυρη εντολή',
+      true,
+      true,
+    ); // Not enough information to determine whether user actually wanted an assignment statement
     return new AST.AssignmentAST(left, this.expression()).inheritPositionFrom(
       assignmentToken,
     );

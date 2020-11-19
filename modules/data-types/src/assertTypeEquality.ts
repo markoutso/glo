@@ -65,7 +65,7 @@ export default function assertTypeEquality({
     ? message
         .replace(/LEFT_TYPE/g, leftPrint)
         .replace(/RIGHT_TYPE/g, rightPrint)
-    : `Περίμενα οι τελεστέοι να είναι του ίδιου τύπου, αλλά έλαβα μη-συμβατούς τύπους ${leftPrint} και ${rightPrint}`;
+    : `Περίμενα οι τελεστέοι να είναι του ίδιου τύπου, αλλά έλαβα μη συμβατούς τύπους ${leftPrint} και ${rightPrint}`;
 
   if (left.isArrayType && right.isArrayType) {
     if (

@@ -202,27 +202,17 @@ export class Lexer {
       },
       end: {
         linePosition: this.linePosition,
-        characterPosition: this.characterPosition - 1,
+        characterPosition: this.characterPosition,
       },
     };
 
     while (this.currentCharacter != "'") {
-      if (this.currentCharacter === null) {
+      if (this.currentCharacter === '\n' || this.currentCharacter === null) {
         throw new GLOError(startPosition, 'Η σταθερά χαρακτήρων δεν τελειώνει');
       }
 
       str += this.currentCharacter;
       this.currentCharacter = this.advance();
-    }
-
-    if (this.currentCharacter != "'") {
-      throw new GLOError(
-        {
-          start: this,
-          end: this,
-        },
-        'Μη-έγκυρη σταθερά χαρακτήρων',
-      );
     }
 
     this.currentCharacter = this.advance();

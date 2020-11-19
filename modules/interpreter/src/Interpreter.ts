@@ -278,16 +278,17 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   public async visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
     const procedure = new Types.GLOProcedure(async (args, rewrite) => {
       await this.withNewScope(node.name.name, async scope => {
-        // Allow recursion
-        scope.insert(
-          this.scope.resolve(node.name.name)!, // Guaranteed by TypeChecker
-        );
-        scope.changeValue(node.name.name, procedure);
-        new LocalSymbolScope(
-          node.name.name,
-          SymbolScopeType.Procedure,
-          this.scope,
-        );
+        const symbol = this.scope.resolve(node.name.name)!; // Guaranteed by TypeChecker
+        if (!this.scope.has(symbol)) {
+          // Allow recursion
+          scope.insert(symbol);
+          scope.changeValue(node.name.name, procedure);
+          new LocalSymbolScope(
+            node.name.name,
+            SymbolScopeType.Procedure,
+            this.scope,
+          );
+        }
 
         // Register parameter values
         node.args
@@ -571,16 +572,17 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   public async visitFunctionDeclaration(node: AST.FunctionDeclarationAST) {
     const func = new Types.GLOFunction(async args => {
       await this.withNewScope(node.name.name, async scope => {
-        // Allow recursion
-        scope.insert(
-          this.scope.resolve(node.name.name)!, // Guaranteed by TypeChecker
-        );
-        scope.changeValue(node.name.name, func);
-        new LocalSymbolScope(
-          node.name.name,
-          SymbolScopeType.Function,
-          this.scope,
-        );
+        const symbol = this.scope.resolve(node.name.name)!; // Guaranteed by TypeChecker
+        if (!this.scope.has(symbol)) {
+          // Allow recursion
+          scope.insert(symbol);
+          scope.changeValue(node.name.name, func);
+          new LocalSymbolScope(
+            node.name.name,
+            SymbolScopeType.Function,
+            this.scope,
+          );
+        }
 
         node.args
           .map(arg => arg.name)
@@ -659,7 +661,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω λογική τιμή(ΑΛΗΘΗΣ ή ΨΕΥΔΗΣ) στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη λογική τιμή '${str}'`,
+            `Περίμενα να διαβάσω λογική τιμή(ΑΛΗΘΗΣ ή ΨΕΥΔΗΣ) στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη λογική τιμή '${str}'`,
           );
         }
       } else if (expectedType === Types.GLOReal) {
@@ -668,7 +670,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη πραγματική τιμή '${str}'`,
+            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη πραγματική τιμή '${str}'`,
           );
         }
       } else if (expectedType === Types.GLOInteger) {
@@ -677,7 +679,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη ακέραια τιμή '${str}'`,
+            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη ακέραια τιμή '${str}'`,
           );
         }
       } else if (expectedType === Types.GLOString) {

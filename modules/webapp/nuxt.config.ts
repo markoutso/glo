@@ -2,6 +2,7 @@ import { Configuration } from '@nuxt/types';
 
 const config: Configuration = {
   target: 'static',
+  ssr: false,
   head: {
     title: 'GLO Διερμηνευτής της Γλώσσας',
     meta: [
