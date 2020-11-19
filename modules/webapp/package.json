@@ -1,6 +1,6 @@
 {
   "name": "@glossa-glo/webapp",
-  "version": "1.0.4-beta",
+  "version": "1.0.5-beta",
   "description": "Glo webapp",
   "author": "komninoschat",
   "private": true,
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@glossa-glo/error": "^1.0.2-beta",
-    "@glossa-glo/glo": "^1.0.2-beta",
+    "@glossa-glo/glo": "^1.0.5-beta",
     "@nuxt/typescript-build": "^0.6.6",
     "@nuxt/typescript-runtime": "^0.4.6",
     "@nuxtjs/axios": "^5.8.0",

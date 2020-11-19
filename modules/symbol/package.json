@@ -1,6 +1,6 @@
 {
   "name": "@glossa-glo/symbol",
-  "version": "1.0.2-beta",
+  "version": "1.0.5-beta",
   "description": "GLO symbols",
   "author": "komninoschat <komninoschat@gmail.com>",
   "homepage": "https://github.com/komninoschat/glo#readme",
@@ -29,9 +29,9 @@
     "url": "https://github.com/komninoschat/glo/issues"
   },
   "dependencies": {
-    "@glossa-glo/ast": "^1.0.2-beta",
+    "@glossa-glo/ast": "^1.0.5-beta",
     "@glossa-glo/case-insensitive-map": "^1.0.2-beta",
-    "@glossa-glo/data-types": "^1.0.2-beta",
+    "@glossa-glo/data-types": "^1.0.5-beta",
     "@glossa-glo/error": "^1.0.2-beta"
   },
   "devDependencies": {
