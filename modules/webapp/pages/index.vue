@@ -130,7 +130,6 @@ import 'codemirror/theme/darcula.css';
 import 'codemirror/theme/eclipse.css';
 import 'codemirror/addon/selection/active-line.js'
 import 'codemirror/addon/selection/mark-selection.js'
-import 'codemirror/mode/pascal/pascal.js';
 
 import '../glossa.js'
 
