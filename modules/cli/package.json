@@ -10,7 +10,7 @@
   "license": "MIT",
   "main": "lib/cli.js",
   "bin": {
-    "glo": "bin/run"
+    "glossa": "bin/run"
   },
   "directories": {
     "lib": "lib",
