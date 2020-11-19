@@ -486,7 +486,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τον αριστερό τελεστέο να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(left)}`,
     );
     assertEquality(
       node,
@@ -494,7 +494,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τον δεξιό τελεστέο να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(left)}`,
     );
 
     return Types.GLOBoolean;
@@ -509,7 +509,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τον αριστερό τελεστέο να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(left)}`,
     );
     assertEquality(
       node,
@@ -517,7 +517,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τον δεξιό τελεστέο να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(left)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(left)}`,
     );
 
     return Types.GLOBoolean;
@@ -532,7 +532,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τον τελεστέο να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(target)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(target)}`,
     );
 
     return Types.GLOBoolean;
@@ -652,7 +652,7 @@ export default class TypeChecker extends AST.ASTVisitor<
           }' να είναι τύπου ${Types.printType(mismatches[0])}${mismatches
             .slice(1)
             .map(type => ` ή ${Types.printType(type)}`)
-            .join('')}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(arg)}`,
+            .join('')}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(arg)}`,
         );
       }
 
@@ -676,7 +676,7 @@ export default class TypeChecker extends AST.ASTVisitor<
           left: declarationType,
           right: arg,
           allowPromoteLeft: false,
-          message: `Περίμενα την παράμετρο '${argDeclarationName}' να είναι τύπου LEFT_TYPE, αλλά έλαβα μη-συμβατό τύπο RIGHT_TYPE`,
+          message: `Περίμενα την παράμετρο '${argDeclarationName}' να είναι τύπου LEFT_TYPE, αλλά έλαβα μη συμβατό τύπο RIGHT_TYPE`,
         });
       },
     );
@@ -692,7 +692,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOInteger,
       `Περίμενα τον μετρητή επανάληψης να είναι τύπου ${Types.printType(
         Types.GLOInteger,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(counterType)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(counterType)}`,
     );
 
     const startValueType = this.visit(node.startValue);
@@ -702,7 +702,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOInteger,
       `Περίμενα την αρχική τιμή επανάληψης να είναι τύπου ${Types.printType(
         Types.GLOInteger,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(startValueType)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(startValueType)}`,
     );
 
     const endValueType = this.visit(node.endValue);
@@ -712,7 +712,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOInteger,
       `Περίμενα την τελική επανάληψης να είναι τύπου ${Types.printType(
         Types.GLOInteger,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(endValueType)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(endValueType)}`,
     );
 
     const stepType = this.visit(node.step);
@@ -722,7 +722,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOInteger,
       `Περίμενα το βήμα επανάληψης να είναι τύπου ${Types.printType(
         Types.GLOInteger,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(stepType)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(stepType)}`,
     );
 
     node.statementList.forEach(node => this.visit(node).bind(this));
@@ -737,7 +737,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τη συνθήκη επανάληψης να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(conditionType)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(conditionType)}`,
     );
 
     node.statementList.forEach(node => this.visit(node).bind(this));
@@ -752,7 +752,7 @@ export default class TypeChecker extends AST.ASTVisitor<
       Types.GLOBoolean,
       `Περίμενα τη συνθήκη επανάληψης να είναι τύπου ${Types.printType(
         Types.GLOBoolean,
-      )}, αλλά έλαβα μη-συμβατό τύπο ${Types.printType(conditionType)}`,
+      )}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(conditionType)}`,
     );
 
     node.statementList.forEach(node => this.visit(node).bind(this));
@@ -786,7 +786,7 @@ export default class TypeChecker extends AST.ASTVisitor<
         node: accessor,
         left: Types.GLOInteger,
         right: this.visit(accessor),
-        message: `Περίμενα τον δείκτη του πίνακα '${node.array.name}' να είναι τύπου LEFT_TYPE αλλά έλαβα μη-συμβατό τύπο RIGHT_TYPE`,
+        message: `Περίμενα τον δείκτη του πίνακα '${node.array.name}' να είναι τύπου LEFT_TYPE αλλά έλαβα μη συμβατό τύπο RIGHT_TYPE`,
         allowPromoteLeft: false,
       });
     }

@@ -661,7 +661,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω λογική τιμή(ΑΛΗΘΗΣ ή ΨΕΥΔΗΣ) στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη λογική τιμή '${str}'`,
+            `Περίμενα να διαβάσω λογική τιμή(ΑΛΗΘΗΣ ή ΨΕΥΔΗΣ) στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη λογική τιμή '${str}'`,
           );
         }
       } else if (expectedType === Types.GLOReal) {
@@ -670,7 +670,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη πραγματική τιμή '${str}'`,
+            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη πραγματική τιμή '${str}'`,
           );
         }
       } else if (expectedType === Types.GLOInteger) {
@@ -679,7 +679,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη-έγκυρη ακέραια τιμή '${str}'`,
+            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη ακέραια τιμή '${str}'`,
           );
         }
       } else if (expectedType === Types.GLOString) {
