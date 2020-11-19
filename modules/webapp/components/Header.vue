@@ -30,6 +30,7 @@
         @click.native="download"
         icon="fas fa-save"
         color="black"
+        :color="!darkmode ? 'black' : 'white'"
       )
       ButtonSecondary(
         @click.native="toggleFullscreen"
