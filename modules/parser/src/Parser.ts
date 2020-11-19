@@ -647,6 +647,13 @@ export class Parser {
 
     const subprogramDeclarations = this.subprogramDeclarations();
 
+    if (!(this.currentToken instanceof Lexer.EofToken)) {
+      throw new GLOError(
+        this.currentToken,
+        'Περίμενα ΔΙΑΔΙΚΑΣΙΑ ή ΣΥΝΑΡΤΗΣΗ μετά από ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ',
+      );
+    }
+
     return new AST.ProgramAST(
       programName,
       [...variableDeclarations, ...subprogramDeclarations],
