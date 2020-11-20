@@ -125,9 +125,6 @@ export class Lexer {
     while (this.currentCharacter != '\n' && this.currentCharacter != null) {
       this.currentCharacter = this.advance();
     }
-    if (this.currentCharacter === '\n') {
-      this.currentCharacter = this.advance();
-    }
   }
 
   private number() {
