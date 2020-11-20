@@ -43,6 +43,9 @@ CodeMirror.defineMode("glossa", function() {
     if (ch == "'") {
       state.tokenize = tokenString(ch);
       return state.tokenize(stream, state);
+    } else if (ch == '"') {
+      state.tokenize = tokenString(ch);
+      return state.tokenize(stream, state);
     }
     if (ch == "!") {
       stream.skipToEnd();

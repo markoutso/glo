@@ -6,7 +6,7 @@ export default class VariableSymbol extends GLOSymbol {
   constructor(
     name: string,
     public readonly type: typeof Types.GLODataType,
-    public readonly isConstant: boolean,
+    public readonly isConstant = false,
     public readonly dimensionLength?: AST[],
   ) {
     super(name);
