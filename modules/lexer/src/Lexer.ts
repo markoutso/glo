@@ -360,7 +360,7 @@ export class Lexer {
             start: this,
             end: this,
           },
-          `Μη-δεκτός χαρακτήρας '${this.currentCharacter}'`,
+          `Μη δεκτός χαρακτήρας '${this.currentCharacter}'`,
         );
       }
     }
