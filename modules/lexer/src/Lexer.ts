@@ -358,7 +358,10 @@ export class Lexer {
         throw new GLOError(
           {
             start: this,
-            end: this,
+            end: {
+              linePosition: this.linePosition,
+              characterPosition: this.characterPosition + 1,
+            },
           },
           `Μη δεκτός χαρακτήρας '${this.currentCharacter}'`,
         );
