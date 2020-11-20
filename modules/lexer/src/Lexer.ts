@@ -56,8 +56,8 @@ export class Lexer {
   ]);
 
   private readonly numberRegex = /^\d$/;
-  private readonly idFirstCharacterRegex = /^[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z_]$/;
-  private readonly idRegex = /^[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z0-9_]$/;
+  private readonly idFirstCharacterRegex = /^[α-ωΑ-ΩίϊΐόάέύϋΰήώΊΪΪ́ΌΆΈΎΫΫ́ΉΏa-zA-Z_]$/;
+  private readonly idRegex = /^[α-ωΑ-ΩίϊΐόάέύϋΰήώΊΪΪ́ΌΆΈΎΫΫ́ΉΏa-zA-Z0-9_]$/;
   private readonly whitespaceRegex = /^[^\S\n]$/;
 
   private sourceCode: string;
