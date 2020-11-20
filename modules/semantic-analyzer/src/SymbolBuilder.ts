@@ -70,6 +70,7 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
       symbol = new GLOSymbol.VariableSymbol(
         node.variable.name,
         node.type.dataType,
+        false,
         node.type instanceof AST.ArrayAST
           ? node.type.dimensionLength
           : undefined,
@@ -84,6 +85,24 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
     return symbol;
   }
 
+  public visitConstantDeclaration(
+    node: AST.ConstantDeclarationAST,
+  ): GLOSymbol.VariableSymbol {
+    const symbol = new GLOSymbol.VariableSymbol(
+      node.variable.name,
+      node.type!, // Guaranteed by SimplifyConstants
+      true,
+    ).inheritPositionFrom(node.variable);
+
+    this.currentScope.insert(symbol);
+    this.currentScope.changeValue(
+      node.variable.name,
+      node.value!, // Guaranteed by SimplifyConstants
+    );
+
+    return symbol;
+  }
+
   public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST): void {
     this.currentScope = new LocalSymbolScope(
       node.name.name,
@@ -91,11 +110,18 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
       this.currentScope,
     );
 
-    const procedureVariables = node.declarations.map(arg =>
-      this.visitVariableDeclaration(arg),
-    );
+    const procedureVariables = [
+      ...node.variableDeclarations.map(arg =>
+        this.visitVariableDeclaration(arg),
+      ),
+      ...node.constantDeclarations.map(arg =>
+        this.visitConstantDeclaration(arg),
+      ),
+    ];
 
-    const procedureVariableNames = procedureVariables.map(v => v.name);
+    const procedureVariableNames = procedureVariables
+      .filter(v => !v.isConstant)
+      .map(v => v.name);
     node.args.forEach(arg => {
       if (!procedureVariableNames.includes(arg.name)) {
         throw new GLOError(
@@ -131,13 +157,18 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
       this.currentScope,
     );
 
-    const functionVariables = node.declarations.map(arg =>
-      this.visitVariableDeclaration(arg),
-    );
+    const functionVariables = [
+      ...node.variableDeclarations.map(arg =>
+        this.visitVariableDeclaration(arg),
+      ),
+      ...node.constantDeclarations.map(arg =>
+        this.visitConstantDeclaration(arg),
+      ),
+    ];
 
-    const argNames = node.args.map(arg => arg.name);
-
-    const functionVariableNames = functionVariables.map(v => v.name);
+    const functionVariableNames = functionVariables
+      .filter(v => !v.isConstant)
+      .map(v => v.name);
     node.args.forEach(arg => {
       if (!functionVariableNames.includes(arg.name)) {
         throw new GLOError(
@@ -146,6 +177,8 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
         );
       }
     });
+
+    const argNames = node.args.map(arg => arg.name);
 
     const argSymbols = functionVariables.filter(symbol =>
       argNames.includes(symbol.name),
@@ -231,7 +264,11 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
 
   public visitAssignment(node: AST.AssignmentAST): void {
     if (node.left instanceof VariableAST) {
-      this.visitVariable(node.left, true);
+      const symbol = this.visitVariable(node.left, true);
+
+      if (symbol instanceof VariableSymbol && symbol.isConstant) {
+        throw new GLOError(symbol, 'Δεν μπορώ να αναθέσω τιμή σε σταθερά');
+      }
     } else {
       this.visit(node.left);
     }

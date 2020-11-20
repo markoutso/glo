@@ -7,7 +7,7 @@ export default class VariableDeclarationAST extends AST {
 
   constructor(public readonly variable: VariableAST, type: TypeAST) {
     super();
-    this.addChild(variable);
+    this.addChild(variable, type);
     this.type = type;
   }
 }

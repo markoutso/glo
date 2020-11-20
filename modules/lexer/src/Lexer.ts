@@ -52,6 +52,7 @@ export class Lexer {
     ['ΠΕΡΙΠΤΩΣΗ', () => new Token.CaseToken()],
     ['ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ', () => new Token.SelectEndToken()],
     ['MOD', () => new Token.ModToken()],
+    ['ΣΤΑΘΕΡΕΣ', () => new Token.ConstantToken()],
   ]);
 
   private readonly numberRegex = /^\d$/;
@@ -192,7 +193,7 @@ export class Lexer {
     }
   }
 
-  private stringConstant() {
+  private stringConstant(terminator: string) {
     let str = '';
 
     const startPosition = {
@@ -206,7 +207,7 @@ export class Lexer {
       },
     };
 
-    while (this.currentCharacter != "'") {
+    while (this.currentCharacter != terminator) {
       if (this.currentCharacter === '\n' || this.currentCharacter === null) {
         throw new GLOError(startPosition, 'Η σταθερά χαρακτήρων δεν τελειώνει');
       }
@@ -341,9 +342,10 @@ export class Lexer {
         return new Token.ClosingBracketToken()
           .inheritStartPositionFrom(this.getPositionMinus(1))
           .inheritEndPositionFrom(this);
-      } else if (this.currentCharacter == "'") {
+      } else if (this.currentCharacter == "'" || this.currentCharacter == '"') {
+        const stringTerminator = this.currentCharacter;
         this.currentCharacter = this.advance();
-        return this.stringConstant()
+        return this.stringConstant(stringTerminator)
           .inheritStartPositionFrom(this.getPositionMinus(1))
           .inheritEndPositionFrom(this);
       } else if (this.currentCharacter == '^') {

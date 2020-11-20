@@ -47,6 +47,7 @@
 <style lang="stylus" scoped>
 header-height = 70px
 console-height = 200px
+console-height-mobile = 150px
 console-margin = 5px
 
 read-color = #fcba03
@@ -60,12 +61,15 @@ read-color-dark = #634903
 
 .editor
   height "calc(100vh - %s - %s)" % (header-height console-height)
-  font-size 17px
   font-family "Roboto Mono", monospace
   outline none
   line-height 1.25
+  @media (max-width 600px)
+    height "calc(100vh - %s - %s)" % (header-height console-height-mobile)
   >>> .CodeMirror
-    height @height
+    height "calc(100vh - %s - %s)" % (header-height console-height)
+    @media (max-width 600px)
+      height "calc(100vh - %s - %s)" % (header-height console-height-mobile)
     padding-top 5px
   >>> .read
     background read-color
@@ -82,7 +86,6 @@ read-color-dark = #634903
   height console-height
   width 100%
   outline none
-  font-size 17px
   margin 0
   padding 10px 15px
   border 0
@@ -94,6 +97,9 @@ read-color-dark = #634903
   z-index 5
   background white
   overflow-y scroll
+  @media (max-width 600px)
+    padding 10px 12px
+    height console-height-mobile
   >>> .error
     color #dc3545
     font-weight bold
@@ -206,12 +212,12 @@ export default class InterpreterPage extends Vue {
   get options() {
     return {
       tabSize: 4,
-      lineNumbers: true,
+      lineNumbers: this.onLoadWidth > 600 ? true : false,
       line: true,
       readOnly: this.actionBeingPerformed,
       theme: !this.darkmode ? 'eclipse' : 'darcula',
       mode: 'text/x-glossa',
-      styleActiveLine: true,
+      styleActiveLine: this.onLoadWidth > 600 ? true : false,
       styleSelectedText: true
     }
   }
@@ -364,6 +370,14 @@ export default class InterpreterPage extends Vue {
   }
   reduceFontSize() {
     this.fontSize = parseInt(this.fontSize.slice(0, -2)) - 1 + 'px';
+  }
+
+  onLoadWidth: number = 0;
+  created() {
+    this.onLoadWidth = innerWidth;
+    if(this.onLoadWidth <= 600) {
+      this.fontSize = '16px';
+    }
   }
 
   getSaveStateConfig() {

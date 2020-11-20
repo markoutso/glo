@@ -68,6 +68,7 @@ import ExponentiationToken from './ExponentiationToken';
 import SelectToken from './SelectToken';
 import CaseToken from './CaseToken';
 import SelectEndToken from './SelectEndToken';
+import ConstantToken from './ConstantToken';
 
 export {
   Token,
@@ -140,4 +141,5 @@ export {
   SelectToken,
   CaseToken,
   SelectEndToken,
+  ConstantToken,
 };

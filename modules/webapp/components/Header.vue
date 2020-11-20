@@ -1,10 +1,17 @@
 <template lang="pug">
   .header(:class="darkmode ? 'darkmode': ''")
-    img.logo(:src="!darkmode ? img('logo-day.png') : img('logo-night.png')")
+    img.logo.logo-regular(:src="!darkmode ? img('logo-day.png') : img('logo-night.png')")
+    img.logo.logo-small(:src="!darkmode ? img('logo-day-small.png') : img('logo-night-small.png')")
     .buttons
-      ButtonPrimary(
+      ButtonPrimary.interpret(
         @click.native="interpret"
         :text="!interpreting ? 'Εκτέλεση' : 'Εκτελείται...'"
+        :icon="!interpreting ? 'fas fa-play' : 'fas fa-spinner'"
+        :color="!interpreting ? 'green' : 'blue'"
+        :disabled="actionBeingPerformed"
+      )
+      ButtonPrimary.interpret-small(
+        @click.native="interpret"
         :icon="!interpreting ? 'fas fa-play' : 'fas fa-spinner'"
         :color="!interpreting ? 'green' : 'blue'"
         :disabled="actionBeingPerformed"
@@ -20,19 +27,19 @@
         :icon="!darkmode ? 'fas fa-moon' : 'fas fa-sun'"
         :color="!darkmode ? 'black' : 'white'"
       )
-      ButtonSecondary(
+      ButtonSecondary.animate(
         @click.native="toggleAnimate"
         :icon="!animating ? 'fas fa-running' : 'fas fa-stop'"
         :color="!darkmode ? 'black' : 'white'"
         :disabled="interpreting"
       )
-      ButtonSecondary(
+      ButtonSecondary.download(
         @click.native="download"
         icon="fas fa-save"
         color="black"
         :color="!darkmode ? 'black' : 'white'"
       )
-      ButtonSecondary(
+      ButtonSecondary.fullscreen(
         @click.native="toggleFullscreen"
         :icon="!fullscreen ? 'fas fa-expand' : 'fas fa-compress'"
         :color="!darkmode ? 'black' : 'white'"
@@ -60,8 +67,8 @@
     flex-direction row
     > *
       margin-right 15px
-    &:last-child
-      margin-right 0
+      &:last-child
+        margin-right 0
   .zoom
     font-size 1.1em
     i
@@ -80,6 +87,33 @@
     display none
   .mode-switch-small
     display block
+
+.logo-small
+  display none
+@media (max-width 750px)
+  .logo-regular
+    display none
+  .logo-small
+    display block
+
+.interpret-small
+  display none
+@media (max-width 600px)
+  .interpret
+  .mode-switch
+  .mode-switch-small
+  .animate
+  .download
+  .fullscreen
+  .zoom
+    display none
+  .interpret-small
+    display block
+  .header
+    padding 0 12px
+    .buttons
+      > *
+        margin-right 0
 </style>
 
 <script lang="ts">

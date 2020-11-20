@@ -255,6 +255,10 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
     });
   }
 
+  public async visitConstantDeclaration(node: AST.ConstantDeclarationAST) {
+    return new Types.GLOVoid();
+  }
+
   public async visitVariableDeclaration(node: AST.VariableDeclarationAST) {
     return new Types.GLOVoid();
   }
@@ -299,8 +303,11 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
             scope.changeValue(argName, args[i]);
           });
 
-        for (let i = 0; i < node.declarations.length; i++) {
-          await this.visit(node.declarations[i]);
+        for (let i = 0; i < node.constantDeclarations.length; i++) {
+          await this.visit(node.constantDeclarations[i]);
+        }
+        for (let i = 0; i < node.variableDeclarations.length; i++) {
+          await this.visit(node.variableDeclarations[i]);
         }
         for (let i = 0; i < node.statementList.length; i++) {
           await this.visit(node.statementList[i]);
@@ -418,10 +425,12 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
       await Promise.all(
         node.args.map(async arg => {
           if (arg instanceof AST.VariableAST) {
-            return {
-              name: arg.name,
-              accessors: null,
-            };
+            return !(this.scope.resolve(arg.name) as VariableSymbol).isConstant
+              ? {
+                  name: arg.name,
+                  accessors: null,
+                }
+              : false;
           } else if (arg instanceof AST.ArrayAccessAST) {
             return {
               name: arg.array.name,
@@ -590,8 +599,11 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
             scope.changeValue(argName, args[i]);
           });
 
-        for (let i = 0; i < node.declarations.length; i++) {
-          await this.visit(node.declarations[i]);
+        for (let i = 0; i < node.constantDeclarations.length; i++) {
+          await this.visit(node.constantDeclarations[i]);
+        }
+        for (let i = 0; i < node.variableDeclarations.length; i++) {
+          await this.visit(node.variableDeclarations[i]);
         }
         for (let i = 0; i < node.statementList.length; i++) {
           await this.visit(node.statementList[i]);

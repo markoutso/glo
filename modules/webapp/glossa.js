@@ -33,7 +33,7 @@ CodeMirror.defineMode("glossa", function() {
     "ΓΙΑ ΤΟ ΑΠΟ ΜΕΧΡΙ ΕΠΑΝΑΛΑΒΕ ΟΣΟ ΑΡΧΗ_ΕΠΑΝΑΛΗΨΗΣ ΜΕΧΡΙΣ_ΟΤΟΥ ΣΥΝΑΡΤΗΣΗ " +
     "ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ ΜΕ_ΒΗΜΑ ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ ΚΑΛΕΣΕ " +
     "ΔΙΑΒΑΣΕ ΓΡΑΨΕ ΑΛΛΙΩΣ_ΑΝ ΤΕΛΟΣ_ΑΝ ΑΚΕΡΑΙΑ ΛΟΓΙΚΗ ΠΡΑΓΜΑΤΙΚΗ ΧΑΡΑΚΤΗΡΑΣ " +
-    "ΕΠΙΛΕΞΕ ΠΕΡΙΠΤΩΣΗ ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ MOD");
+    "ΕΠΙΛΕΞΕ ΠΕΡΙΠΤΩΣΗ ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ MOD ΣΤΑΘΕΡΕΣ");
   var atoms = {};
 
   var isOperatorChar = /[+\-*^=<>!?|\/]/;
@@ -41,6 +41,9 @@ CodeMirror.defineMode("glossa", function() {
   function tokenBase(stream, state) {
     var ch = stream.next();
     if (ch == "'") {
+      state.tokenize = tokenString(ch);
+      return state.tokenize(stream, state);
+    } else if (ch == '"') {
       state.tokenize = tokenString(ch);
       return state.tokenize(stream, state);
     }
