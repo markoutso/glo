@@ -50,25 +50,7 @@ export default abstract class ASTVisitor<T = unknown> {
   public abstract visitRead(node: AST.ReadAST): T;
   public abstract visitWrite(node: AST.WriteAST): T;
   public abstract visitExponentiation(node: AST.ExponentiationAST): T;
-
-  public visitConstant(node: AST.ConstantAST): T {
-    if (node instanceof AST.IntegerConstantAST) {
-      return this.visitIntegerConstant(node);
-    } else if (node instanceof AST.RealConstantAST) {
-      return this.visitRealConstant(node);
-    } else if (node instanceof AST.StringConstantAST) {
-      return this.visitStringConstant(node);
-    } else if (node instanceof AST.TrueConstantAST) {
-      return this.visitTrue(node);
-    } else if (node instanceof AST.FalseConstantAST) {
-      return this.visitFalse(node);
-    } else {
-      throw new GLOError(
-        node,
-        'Program error: Unknown constant AST node type on visitor',
-      );
-    }
-  }
+  public abstract visitConstantDeclaration(node: AST.ConstantDeclarationAST): T;
 
   public visit(node: AST.AST): T {
     if (node instanceof AST.AssignmentAST) {
@@ -161,6 +143,8 @@ export default abstract class ASTVisitor<T = unknown> {
       return this.visitWrite(node);
     } else if (node instanceof AST.ExponentiationAST) {
       return this.visitExponentiation(node);
+    } else if (node instanceof AST.ConstantDeclarationAST) {
+      return this.visitConstantDeclaration(node);
     } else {
       throw new GLOError(
         node,

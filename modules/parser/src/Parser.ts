@@ -337,6 +337,38 @@ export class Parser {
     return currentIf;
   }
 
+  private constantDeclaration() {
+    this.currentToken = this.eat(Lexer.ConstantToken);
+
+    this.nl('Περίμενα νέα γραμμή μετά από ΣΤΑΘΕΡΕΣ');
+
+    const declarations: AST.ConstantDeclarationAST[] = [];
+
+    do {
+      const variable = this.variable();
+
+      this.currentToken = this.eat(
+        Lexer.EqualsToken,
+        "Περίμενα '=' μετά από όνομα σταθεράς",
+      );
+
+      if (this.currentToken instanceof Lexer.NewLineToken) {
+        throw new GLOError(
+          this.previousToken!,
+          "Περίμενα έκφραση μετά από το '=' στη δήλωση σταθεράς",
+        );
+      }
+
+      const expression = this.expression();
+
+      declarations.push(new AST.ConstantDeclarationAST(variable, expression));
+
+      this.nl('Περίμενα νέα γραμμή μετά τη δήλωση σταθεράς');
+    } while (this.currentToken instanceof Lexer.IdToken);
+
+    return declarations;
+  }
+
   private variableDeclaration() {
     const variableOrArrayDeclaration = (type: AST.TypeAST) => {
       const variable = this.variable();
@@ -434,6 +466,34 @@ export class Parser {
     return declarations;
   }
 
+  private constantOrVariableDeclaration() {
+    let constantDeclarations: AST.ConstantDeclarationAST[] = [];
+    let variableDeclarations: AST.VariableDeclarationAST[] = [];
+
+    if (this.currentToken instanceof Lexer.ConstantToken) {
+      constantDeclarations = this.constantDeclaration();
+    }
+
+    if (this.currentToken instanceof Lexer.VariableToken) {
+      variableDeclarations = this.variableDeclaration();
+    }
+
+    if (
+      this.currentToken instanceof Lexer.ConstantToken &&
+      !constantDeclarations.length
+    ) {
+      throw new GLOError(
+        this.currentToken,
+        'Οι σταθερές πρέπει να δηλώνονται πρίν από τις μεταβλητές',
+      );
+    }
+
+    return {
+      constantDeclarations,
+      variableDeclarations,
+    };
+  }
+
   private subprogramDeclarations() {
     const declarations: (
       | AST.ProcedureDeclarationAST
@@ -508,9 +568,10 @@ export class Parser {
 
     const declarations: AST.VariableDeclarationAST[] = [];
 
-    if (this.currentToken instanceof Lexer.VariableToken) {
-      declarations.push(...this.variableDeclaration());
-    }
+    const {
+      constantDeclarations,
+      variableDeclarations,
+    } = this.constantOrVariableDeclaration();
 
     this.currentToken = this.eat(
       Lexer.BeginToken,
@@ -529,7 +590,8 @@ export class Parser {
     return new AST.ProcedureDeclarationAST(
       name,
       args,
-      declarations,
+      constantDeclarations,
+      variableDeclarations,
       statementList,
     ).inheritPositionFrom(procedureToken);
   }
@@ -562,11 +624,10 @@ export class Parser {
 
     this.nl('Περίμενα νέα γραμμή μετά άπο ορισμό κεφαλιού συνάρτησης');
 
-    const declarations: AST.VariableDeclarationAST[] = [];
-
-    if (this.currentToken instanceof Lexer.VariableToken) {
-      declarations.push(...this.variableDeclaration());
-    }
+    const {
+      constantDeclarations,
+      variableDeclarations,
+    } = this.constantOrVariableDeclaration();
 
     this.currentToken = this.eat(
       Lexer.BeginToken,
@@ -586,7 +647,8 @@ export class Parser {
       name,
       args,
       returnType,
-      declarations,
+      constantDeclarations,
+      variableDeclarations,
       statementList,
     ).inheritPositionFrom(functionToken);
   }
@@ -653,11 +715,10 @@ export class Parser {
 
     this.nl('Περίμενα νέα γραμμή μετά από το όνομα προγράμματος');
 
-    let variableDeclarations: AST.VariableDeclarationAST[] = [];
-
-    if (this.currentToken instanceof Lexer.VariableToken) {
-      variableDeclarations = this.variableDeclaration();
-    }
+    const {
+      constantDeclarations,
+      variableDeclarations,
+    } = this.constantOrVariableDeclaration();
 
     this.currentToken = this.eat(
       Lexer.BeginToken,
@@ -686,7 +747,11 @@ export class Parser {
 
     return new AST.ProgramAST(
       programName,
-      [...variableDeclarations, ...subprogramDeclarations],
+      [
+        ...constantDeclarations,
+        ...variableDeclarations,
+        ...subprogramDeclarations,
+      ],
       statementList,
     ).inheritPositionFrom(programToken);
   }

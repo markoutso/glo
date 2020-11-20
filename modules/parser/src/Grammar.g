@@ -33,12 +33,20 @@ subprogram_declarations
   : (procedure_declaration | function_declaration)*
   ;
 
+constant_declaration
+  : "ΣΤΑΘΕΡΕΣ" nl (variable "=" expression nl)+
+  ;
+
 variable_declaration
   : "ΜΕΤΑΒΛΗΤΕΣ" nl (type ":" variable([expression ("," expression)*]) ("," variable([expression ("," expression)*])?)* nl)+
   ;
 
+constant_or_variable_declaration
+  : constant_declaration? variable_declaration?
+  ;
+
 procedure_declaration
-  : "ΔΙΑΔΙΚΑΣΙΑ" variable ("(" procedure_or_function_parameter_list ")") nl (variable_declaration) "ΑΡΧΗ" statement_list "ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ" nl
+  : "ΔΙΑΔΙΚΑΣΙΑ" variable ("(" procedure_or_function_parameter_list ")") nl (constant_or_variable_declaration) "ΑΡΧΗ" statement_list "ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ" nl
   ;
 
 function_return_type
@@ -49,7 +57,7 @@ function_return_type
   ;
 
 function_declaration
-  : "ΣΥΝΑΡΤΗΣΗ" ("(" procedure_or_function_parameter_list ")") ":" function_return_type nl variable_declaration "ΑΡΧΗ" statement_list "ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ" nl
+  : "ΣΥΝΑΡΤΗΣΗ" ("(" procedure_or_function_parameter_list ")") ":" function_return_type nl constant_or_variable_declaration "ΑΡΧΗ" statement_list "ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ" nl
   ;
 
 procedure_or_function_parameter_list
@@ -68,7 +76,7 @@ subrange
   ;
 
 program
-  : "\n"* "ΠΡΟΓΡΑΜΜΑ" variable nl variable_declaration "ΑΡΧΗ" nl statement_list "ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ" nl subprogram_declarations
+  : "\n"* "ΠΡΟΓΡΑΜΜΑ" variable nl constant_or_variable_declaration "ΑΡΧΗ" nl statement_list "ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ" nl subprogram_declarations
   ;
 
 statement_list:

@@ -52,6 +52,7 @@ export class Lexer {
     ['ΠΕΡΙΠΤΩΣΗ', () => new Token.CaseToken()],
     ['ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ', () => new Token.SelectEndToken()],
     ['MOD', () => new Token.ModToken()],
+    ['ΣΤΑΘΕΡΕΣ', () => new Token.ConstantToken()],
   ]);
 
   private readonly numberRegex = /^\d$/;

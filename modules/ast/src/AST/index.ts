@@ -48,6 +48,7 @@ import WriteAST from './WriteAST';
 import ProcedureCallAST from './ProcedureCallAST';
 import ArrayAST from './ArrayAST';
 import ExponentiationAST from './ExponentiationAST';
+import ConstantDeclarationAST from './ConstantDeclarationAST';
 
 export {
   AST,
@@ -100,4 +101,5 @@ export {
   ProcedureCallAST,
   ArrayAST,
   ExponentiationAST,
+  ConstantDeclarationAST,
 };

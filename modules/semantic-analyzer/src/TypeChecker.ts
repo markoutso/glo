@@ -579,7 +579,8 @@ export default class TypeChecker extends AST.ASTVisitor<
   public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
     this.currentScope = this.currentScope.children.get(node.name.name)!;
 
-    node.declarations.forEach(this.visit.bind(this));
+    node.constantDeclarations.forEach(this.visit.bind(this));
+    node.variableDeclarations.forEach(this.visit.bind(this));
     node.statementList.forEach(this.visit.bind(this));
 
     this.currentScope = this.currentScope.getParent()!;
@@ -799,7 +800,8 @@ export default class TypeChecker extends AST.ASTVisitor<
 
     this.throwOnIOVisit = true;
     this.throwOnIOVisitErrorMessageSuffix = 'μέσα σε συνάρτηση';
-    node.declarations.forEach(this.visit.bind(this));
+    node.constantDeclarations.forEach(this.visit.bind(this));
+    node.variableDeclarations.forEach(this.visit.bind(this));
     node.statementList.forEach(this.visit.bind(this));
     this.throwOnIOVisit = false;
     this.throwOnIOVisitErrorMessageSuffix = '';
@@ -847,6 +849,11 @@ export default class TypeChecker extends AST.ASTVisitor<
       }
     });
 
+    return Types.GLOVoid;
+  }
+
+  public visitConstantDeclaration(node: AST.ConstantDeclarationAST) {
+    node.children.forEach(this.visit.bind(this));
     return Types.GLOVoid;
   }
 
