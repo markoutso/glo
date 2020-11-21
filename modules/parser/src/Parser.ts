@@ -312,7 +312,8 @@ export class Parser {
       !(this.peek() instanceof Lexer.ElseToken)
     );
 
-    let currentIf = ifStatements[0];
+    const firstIf = ifStatements[0];
+    let currentIf = firstIf;
 
     for (const ifStatement of ifStatements.slice(1)) {
       currentIf.next = ifStatement;
@@ -334,7 +335,7 @@ export class Parser {
       'Περίμενα ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ στο τέλος δομής επιλογής',
     );
 
-    return currentIf;
+    return firstIf;
   }
 
   private constantDeclaration() {
@@ -695,7 +696,7 @@ export class Parser {
       this.currentToken = this.eat(Lexer.StringToken);
       return new AST.StringAST().inheritPositionFrom(savedToken);
     } else {
-      throw new GLOError(this.currentToken, 'Μη-έγκυρος τύπος μεταβλητής');
+      throw new GLOError(this.currentToken, 'Μη έγκυρος τύπος μεταβλητής');
     }
   }
 
@@ -907,7 +908,7 @@ export class Parser {
     } else if (this.currentToken instanceof Lexer.IdToken) {
       throw new GLOError(
         this.currentToken,
-        'Μη-έγκυρος τύπος συνάρτησης. Περίμενα ΠΡΑΓΜΑΤΙΚΗ ή ΑΚΕΡΑΙΑ ή ΧΑΡΑΚΤΗΡΑΣ ή ΛΟΓΙΚΗ',
+        'Μη έγκυρος τύπος συνάρτησης. Περίμενα ΠΡΑΓΜΑΤΙΚΗ ή ΑΚΕΡΑΙΑ ή ΧΑΡΑΚΤΗΡΑΣ ή ΛΟΓΙΚΗ',
       );
     } else {
       throw new GLOError(
@@ -928,7 +929,7 @@ export class Parser {
     const assignmentToken = Object.assign({}, this.currentToken);
     this.currentToken = this.eat(
       Lexer.AssignToken,
-      'Μη-έγκυρη εντολή',
+      'Μη έγκυρη εντολή',
       true,
       true,
     ); // Not enough information to determine whether user actually wanted an assignment statement
@@ -1135,7 +1136,7 @@ export class Parser {
     } else if (this.currentToken instanceof Lexer.IdToken) {
       return this.variable();
     } else {
-      throw new GLOError(savedToken, 'Μη-έγκυρος παράγοντας έκφρασης');
+      throw new GLOError(savedToken, 'Μη έγκυρος παράγοντας έκφρασης');
     }
   }
 

@@ -6,7 +6,7 @@
 
 // TODO: Move to separate module, take CodeMirror as parameter, toUpperCaseNormalizedGreek, idRegex from modules
 
-import { CodeMirror } from 'vue-codemirror'
+import { CodeMirror } from 'vue-codemirror';
 
 // From CaseInsensitiveMap
 function toUpperCaseNormalizedGreek(s) {
@@ -21,25 +21,27 @@ function toUpperCaseNormalizedGreek(s) {
     .replace(/Ώ/g, 'Ω');
 }
 
-CodeMirror.defineMode("glossa", function() {
+CodeMirror.defineMode('glossa', function() {
   function words(str) {
-    var obj = {}, words = str.split(" ");
-    for (var i = 0; i < words.length; ++i) obj[words[i]] = true;
+    const obj = {},
+      words = str.split(' ');
+    for (let i = 0; i < words.length; ++i) obj[words[i]] = true;
     return obj;
   }
-  var keywords = words(
-    "ΠΡΟΓΡΑΜΜΑ ΜΕΤΑΒΛΗΤΕΣ ΑΡΧΗ ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ DIV ΑΚΕΡΑΙΕΣ ΠΡΑΓΜΑΤΙΚΕΣ " +
-    "ΔΙΑΔΙΚΑΣΙΑ ΑΛΗΘΗΣ ΨΕΥΔΗΣ ΛΟΓΙΚΕΣ ΑΝ ΤΟΤΕ ΑΛΛΙΩΣ ΧΑΡΑΚΤΗΡΕΣ ΚΑΙ Η ΟΧΙ " +
-    "ΓΙΑ ΤΟ ΑΠΟ ΜΕΧΡΙ ΕΠΑΝΑΛΑΒΕ ΟΣΟ ΑΡΧΗ_ΕΠΑΝΑΛΗΨΗΣ ΜΕΧΡΙΣ_ΟΤΟΥ ΣΥΝΑΡΤΗΣΗ " +
-    "ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ ΜΕ_ΒΗΜΑ ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ ΚΑΛΕΣΕ " +
-    "ΔΙΑΒΑΣΕ ΓΡΑΨΕ ΑΛΛΙΩΣ_ΑΝ ΤΕΛΟΣ_ΑΝ ΑΚΕΡΑΙΑ ΛΟΓΙΚΗ ΠΡΑΓΜΑΤΙΚΗ ΧΑΡΑΚΤΗΡΑΣ " +
-    "ΕΠΙΛΕΞΕ ΠΕΡΙΠΤΩΣΗ ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ MOD ΣΤΑΘΕΡΕΣ");
-  var atoms = {};
+  const keywords = words(
+    'ΠΡΟΓΡΑΜΜΑ ΜΕΤΑΒΛΗΤΕΣ ΑΡΧΗ ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ DIV ΑΚΕΡΑΙΕΣ ΠΡΑΓΜΑΤΙΚΕΣ ' +
+      'ΔΙΑΔΙΚΑΣΙΑ ΑΛΗΘΗΣ ΨΕΥΔΗΣ ΛΟΓΙΚΕΣ ΑΝ ΤΟΤΕ ΑΛΛΙΩΣ ΧΑΡΑΚΤΗΡΕΣ ΚΑΙ Η ΟΧΙ ' +
+      'ΓΙΑ ΤΟ ΑΠΟ ΜΕΧΡΙ ΕΠΑΝΑΛΑΒΕ ΟΣΟ ΑΡΧΗ_ΕΠΑΝΑΛΗΨΗΣ ΜΕΧΡΙΣ_ΟΤΟΥ ΣΥΝΑΡΤΗΣΗ ' +
+      'ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ ΜΕ_ΒΗΜΑ ΤΕΛΟΣ_ΣΥΝΑΡΤΗΣΗΣ ΤΕΛΟΣ_ΔΙΑΔΙΚΑΣΙΑΣ ΚΑΛΕΣΕ ' +
+      'ΔΙΑΒΑΣΕ ΓΡΑΨΕ ΑΛΛΙΩΣ_ΑΝ ΤΕΛΟΣ_ΑΝ ΑΚΕΡΑΙΑ ΛΟΓΙΚΗ ΠΡΑΓΜΑΤΙΚΗ ΧΑΡΑΚΤΗΡΑΣ ' +
+      'ΕΠΙΛΕΞΕ ΠΕΡΙΠΤΩΣΗ ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ MOD ΣΤΑΘΕΡΕΣ',
+  );
+  const atoms = {};
 
-  var isOperatorChar = /[+\-*^=<>!?|\/]/;
+  const isOperatorChar = /[+\-*^=<>!?|\/]/;
 
   function tokenBase(stream, state) {
-    var ch = stream.next();
+    const ch = stream.next();
     if (ch == "'") {
       state.tokenize = tokenString(ch);
       return state.tokenize(stream, state);
@@ -47,62 +49,66 @@ CodeMirror.defineMode("glossa", function() {
       state.tokenize = tokenString(ch);
       return state.tokenize(stream, state);
     }
-    if (ch == "!") {
+    if (ch == '!') {
       stream.skipToEnd();
-      return "comment";
+      return 'comment';
     }
     if (/[\[\]\(\),\:]/.test(ch)) {
       return null;
     }
     if (/\d/.test(ch)) {
       stream.eatWhile(/[\w\.]/);
-      return "number";
+      return 'number';
     }
     if (isOperatorChar.test(ch)) {
       stream.eatWhile(isOperatorChar);
-      return "operator";
+      return 'operator';
     }
-    stream.eatWhile(/[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z0-9_]/);
-    var cur = toUpperCaseNormalizedGreek(stream.current());
-    if (keywords.propertyIsEnumerable(cur)) return "keyword";
-    if (atoms.propertyIsEnumerable(cur)) return "atom";
-    return "variable";
+    stream.eatWhile(/[α-ωΑ-ΩίϊΐόάέύϋΰήώΊΪΪ́ΌΆΈΎΫΫ́ΉΏa-zA-Z0-9_]/);
+    const cur = toUpperCaseNormalizedGreek(stream.current());
+    if (keywords.propertyIsEnumerable(cur)) return 'keyword';
+    if (atoms.propertyIsEnumerable(cur)) return 'atom';
+    return 'variable';
   }
 
   function tokenString(quote) {
     return function(stream, state) {
-      var next, end = false;
+      let next,
+        end = false;
       while ((next = stream.next()) != null) {
-        if (next == quote) {end = true; break;}
+        if (next == quote) {
+          end = true;
+          break;
+        }
       }
       if (end) state.tokenize = null;
-      return "string";
+      return 'string';
     };
   }
 
   function tokenComment(stream, state) {
-    var ch;
-    while (ch = stream.next()) {
-      console.log('ch', ch, ch == '\n')
-      if (ch == "\n") {
+    let ch;
+    while ((ch = stream.next())) {
+      console.log('ch', ch, ch == '\n');
+      if (ch == '\n') {
         state.tokenize = null;
         break;
       }
     }
-    return "comment";
+    return 'comment';
   }
 
   // Interface
 
   return {
     startState: function() {
-      return {tokenize: null};
+      return { tokenize: null };
     },
 
     token: function(stream, state) {
       if (stream.eatSpace()) return null;
-      var style = (state.tokenize || tokenBase)(stream, state);
-      if (style == "comment" || style == "meta") return style;
+      const style = (state.tokenize || tokenBase)(stream, state);
+      if (style == 'comment' || style == 'meta') return style;
       return style;
     },
 
@@ -110,4 +116,4 @@ CodeMirror.defineMode("glossa", function() {
   };
 });
 
-CodeMirror.defineMIME("text/x-glossa", "glossa");
+CodeMirror.defineMIME('text/x-glossa', 'glossa');

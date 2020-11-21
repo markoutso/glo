@@ -56,8 +56,8 @@ export class Lexer {
   ]);
 
   private readonly numberRegex = /^\d$/;
-  private readonly idFirstCharacterRegex = /^[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z_]$/;
-  private readonly idRegex = /^[α-ωΑ-Ωίϊΐόάέύϋΰήώa-zA-Z0-9_]$/;
+  private readonly idFirstCharacterRegex = /^[α-ωΑ-ΩίϊΐόάέύϋΰήώΊΪΪ́ΌΆΈΎΫΫ́ΉΏa-zA-Z_]$/;
+  private readonly idRegex = /^[α-ωΑ-ΩίϊΐόάέύϋΰήώΊΪΪ́ΌΆΈΎΫΫ́ΉΏa-zA-Z0-9_]$/;
   private readonly whitespaceRegex = /^[^\S\n]$/;
 
   private sourceCode: string;
@@ -123,9 +123,6 @@ export class Lexer {
 
   private comment() {
     while (this.currentCharacter != '\n' && this.currentCharacter != null) {
-      this.currentCharacter = this.advance();
-    }
-    if (this.currentCharacter === '\n') {
       this.currentCharacter = this.advance();
     }
   }
@@ -361,9 +358,12 @@ export class Lexer {
         throw new GLOError(
           {
             start: this,
-            end: this,
+            end: {
+              linePosition: this.linePosition,
+              characterPosition: this.characterPosition + 1,
+            },
           },
-          `Μη-δεκτός χαρακτήρας '${this.currentCharacter}'`,
+          `Μη δεκτός χαρακτήρας '${this.currentCharacter}'`,
         );
       }
     }
