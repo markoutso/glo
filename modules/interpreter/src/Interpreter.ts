@@ -677,7 +677,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
           );
         }
       } else if (expectedType === Types.GLOReal) {
-        if (/^[+-]?\d+\.\d+$/.test(str)) {
+        if (/^[+-]?\d+(\.\d+)*$/.test(str)) {
           return new Types.GLOReal(parseFloat(str));
         } else {
           throw new GLOError(
