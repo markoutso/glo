@@ -312,7 +312,8 @@ export class Parser {
       !(this.peek() instanceof Lexer.ElseToken)
     );
 
-    let currentIf = ifStatements[0];
+    const firstIf = ifStatements[0];
+    let currentIf = firstIf;
 
     for (const ifStatement of ifStatements.slice(1)) {
       currentIf.next = ifStatement;
@@ -334,7 +335,7 @@ export class Parser {
       'Περίμενα ΤΕΛΟΣ_ΕΠΙΛΟΓΩΝ στο τέλος δομής επιλογής',
     );
 
-    return currentIf;
+    return firstIf;
   }
 
   private constantDeclaration() {
