@@ -356,7 +356,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
             await this.visit(node.next[i]);
           }
         } else {
-          this.visit(node.next);
+          await this.visit(node.next);
         }
       }
     }
@@ -447,7 +447,9 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   }
 
   public async visitFor(node: AST.ForAST) {
-    this.visitAssignment(new AST.AssignmentAST(node.counter, node.startValue));
+    await this.visitAssignment(
+      new AST.AssignmentAST(node.counter, node.startValue),
+    );
 
     if ((await this.visit(node.step)).equals(new Types.GLOInteger(0))) {
       throw new GLOError(node.step, 'Απαγορεύεται επανάληψη με βήμα 0');
