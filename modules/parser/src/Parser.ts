@@ -224,7 +224,7 @@ export class Parser {
     return firstIf;
   }
 
-  private selectCase(selectValue: AST.AST) {
+  private selectCase(selectValue: AST.AST): AST.AST | [AST.AST, AST.AST] {
     const savedToken = Object.assign({}, this.currentToken);
 
     if (this.currentToken instanceof Lexer.EqualsToken) {
@@ -263,8 +263,39 @@ export class Parser {
         selectValue,
         this.expression(),
       ).inheritPositionFrom(savedToken);
+    } else if (
+      this.currentToken instanceof Lexer.IntegerConstToken &&
+      this.peek() instanceof Lexer.DoubleDotToken
+    ) {
+      const left = this.atom() as AST.IntegerConstantAST;
+
+      const doubleDotToken = Object.assign({}, this.currentToken);
+      this.currentToken = this.eat(Lexer.DoubleDotToken);
+
+      if (!(this.currentToken instanceof Lexer.IntegerConstToken)) {
+        throw new GLOError(
+          this.currentToken instanceof Lexer.NewLineToken
+            ? this.previousToken!
+            : this.currentToken,
+          this.currentToken instanceof Lexer.NewLineToken
+            ? 'Περίμενα δεξιά ακέραια τιμή για το εύρος'
+            : 'Περίμενα να δώ ακέραια τιμή για το εύρος',
+        );
+      }
+
+      const right = this.atom() as AST.IntegerConstantAST;
+
+      return [
+        new AST.GreaterEqualsAST(selectValue, left).inheritPositionFrom(
+          doubleDotToken,
+        ),
+        new AST.LessEqualsAST(selectValue, right).inheritPositionFrom(
+          doubleDotToken,
+        ),
+      ];
     } else {
       const expr = this.expression();
+
       return new AST.EqualsAST(selectValue, expr).inheritPositionFrom(expr);
     }
   }
@@ -282,7 +313,16 @@ export class Parser {
         Lexer.CaseToken,
         'Περίμενα ΠΕΡΙΠΤΩΣΗ μέσα στη δομή επιλογής',
       );
-      const conditions = [this.selectCase(selectValue)];
+
+      const conditions = [];
+
+      const res = this.selectCase(selectValue);
+
+      if (Array.isArray(res)) {
+        conditions.push(new AST.AndAST(res[0], res[1]));
+      } else {
+        conditions.push(res);
+      }
 
       while (this.currentToken instanceof Lexer.CommaToken) {
         this.currentToken = this.eat(Lexer.CommaToken);
@@ -294,10 +334,20 @@ export class Parser {
           );
         }
 
-        conditions.push(this.selectCase(selectValue));
+        const res = this.selectCase(selectValue);
+
+        if (Array.isArray(res)) {
+          conditions.push(new AST.AndAST(res[0], res[1]));
+        } else {
+          conditions.push(res);
+        }
       }
 
-      this.nl('Περίμενα νέα γραμμή μετά από τις περιπτώσεις δομής επιλογής');
+      this.nl(
+        `Περίμενα νέα γραμμή μετά από ${
+          conditions.length === 1 ? 'την περίπτωση' : 'τις περιπτώσεις'
+        } δομής επιλογής`,
+      );
 
       const statementList = this.statementList();
 

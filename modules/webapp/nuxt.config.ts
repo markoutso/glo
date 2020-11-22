@@ -16,19 +16,13 @@ const config: Configuration = {
       },
     ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
-    script: [
-      {
-        src: 'https://kit.fontawesome.com/961656ab70.js',
-        crossOrigin: 'anonymous',
-      },
-    ],
   },
   generate: {
     fallback: true,
   },
   loading: { color: '#fff' },
   css: ['reset-css'],
-  plugins: ['./plugins/fullscreen.ts'],
+  plugins: ['./plugins/fullscreen.ts', './plugins/fontawesome.ts'],
   buildModules: ['@nuxt/typescript-build'],
   modules: ['@nuxtjs/axios', 'nuxt-webfontloader'],
   webfontloader: {

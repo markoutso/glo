@@ -6,47 +6,54 @@
       ButtonPrimary.interpret(
         @click.native="interpret"
         :text="!interpreting ? 'Εκτέλεση' : 'Εκτελείται...'"
-        :icon="!interpreting ? 'fas fa-play' : 'fas fa-spinner'"
+        :icon="!interpreting ? 'play' : 'spinner'"
         :color="!interpreting ? 'green' : 'blue'"
         :disabled="actionBeingPerformed"
       )
       ButtonPrimary.interpret-small(
         @click.native="interpret"
-        :icon="!interpreting ? 'fas fa-play' : 'fas fa-spinner'"
+        :icon="!interpreting ? 'play' : 'spinner'"
         :color="!interpreting ? 'green' : 'blue'"
         :disabled="actionBeingPerformed"
       )
       ButtonSecondary.mode-switch(
         @click.native="toggleDarkmode"
-        :icon="!darkmode ? 'fas fa-moon' : 'fas fa-sun'"
+        :icon="!darkmode ? 'moon' : 'sun'"
         :text="!darkmode ? 'Λειτουργία Νύκτας' : 'Λειτουργία Μέρας'"
         :color="!darkmode ? 'black' : 'white'"
       )
       ButtonSecondary.mode-switch-small(
         @click.native="toggleDarkmode"
-        :icon="!darkmode ? 'fas fa-moon' : 'fas fa-sun'"
+        :icon="!darkmode ? 'moon' : 'sun'"
         :color="!darkmode ? 'black' : 'white'"
       )
-      ButtonSecondary.animate(
-        @click.native="toggleAnimate"
-        :icon="!animating ? 'fas fa-running' : 'fas fa-stop'"
-        :color="!darkmode ? 'black' : 'white'"
-        :disabled="interpreting"
-      )
+      //- ButtonSecondary.animate(
+      //-   @click.native="toggleAnimate"
+      //-   :icon="!animating ? 'running' : 'stop'"
+      //-   :color="!darkmode ? 'black' : 'white'"
+      //-   :disabled="interpreting"
+      //- )
       ButtonSecondary.download(
         @click.native="download"
-        icon="fas fa-save"
+        icon="save"
         color="black"
         :color="!darkmode ? 'black' : 'white'"
       )
+      ButtonDropdown.more-options(
+        :color="!darkmode ? 'black' : 'white'"
+        :menu="[ [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
+        @clickAnimate="toggleAnimate"
+        @clickCopyright="openCopyright"
+        @clickContact="openContact"
+      )
       ButtonSecondary.fullscreen(
         @click.native="toggleFullscreen"
-        :icon="!fullscreen ? 'fas fa-expand' : 'fas fa-compress'"
+        :icon="!fullscreen ? 'expand' : 'compress'"
         :color="!darkmode ? 'black' : 'white'"
       )
     .zoom
-      i.fas.fa-search-plus(@click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
-      i.fas.fa-search-minus(@click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
+      FontAwesomeIcon(icon="search-plus" @click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
+      FontAwesomeIcon(icon="search-minus" @click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
 </template>
 
 <style lang="stylus" scoped>
@@ -65,13 +72,14 @@
   .buttons
     display flex
     flex-direction row
+    align-items center
     > *
       margin-right 15px
       &:last-child
         margin-right 0
   .zoom
     font-size 1.1em
-    i
+    > *
       cursor pointer
       &:first-child
         margin-right 12px
@@ -102,8 +110,8 @@
   .interpret
   .mode-switch
   .mode-switch-small
-  .animate
   .download
+  .more-options
   .fullscreen
   .zoom
     display none
@@ -122,11 +130,13 @@ import { Component, Vue, Prop, Emit } from 'nuxt-property-decorator';
 
 import ButtonPrimary from '../components/ButtonPrimary.vue';
 import ButtonSecondary from '../components/ButtonSecondary.vue';
+import ButtonDropdown from '../components/ButtonDropdown.vue';
 
 @Component({
   components: {
     ButtonPrimary,
     ButtonSecondary,
+    ButtonDropdown,
   },
 })
 export default class Header extends Vue {
@@ -164,6 +174,14 @@ export default class Header extends Vue {
 
   @Emit('increaseFontSize')
   increaseFontSize() {}
+
+  openCopyright() {
+    window.location.href = '/copyright.html';
+  }
+
+  openContact() {
+    window.location.href = '/contact.html';
+  }
 
   img(filename: string) {
     return require(`../assets/img/${filename}`)
