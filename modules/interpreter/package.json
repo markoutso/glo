@@ -1,6 +1,6 @@
 {
   "name": "@glossa-glo/interpreter",
-  "version": "1.2.0-beta",
+  "version": "1.2.1-beta",
   "description": "GLO interpreter",
   "author": "komninoschat <komninoschat@gmail.com>",
   "homepage": "https://github.com/komninoschat/glo#readme",
@@ -34,11 +34,11 @@
     "@glossa-glo/data-types": "^1.0.5-beta",
     "@glossa-glo/error": "^1.0.2-beta",
     "@glossa-glo/symbol": "^1.1.0-beta",
-    "lodash.clonedeep": "^4.5.0"
+    "clone-deep": "^4.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",
-    "@types/lodash.clonedeep": "^4.5.6",
+    "@types/clone-deep": "^4.0.1",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
     "chai": "^4.2.0",

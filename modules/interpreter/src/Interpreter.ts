@@ -11,7 +11,7 @@ import {
 import { IntegerConstantAST, VariableAST } from '@glossa-glo/ast';
 import GLOError, { assertEquality, assert } from '@glossa-glo/error';
 import { toUpperCaseNormalizedGreek } from '@glossa-glo/case-insensitive-map';
-import cloneDeep from 'lodash.clonedeep';
+import cloneDeep from 'clone-deep';
 
 export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   public scope: SymbolScope;
