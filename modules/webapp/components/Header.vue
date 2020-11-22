@@ -52,8 +52,8 @@
         :color="!darkmode ? 'black' : 'white'"
       )
     .zoom
-      i.fas.search-plus(@click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
-      i.fas.search-minus(@click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
+      FontAwesomeIcon(icon="search-plus" @click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
+      FontAwesomeIcon(icon="search-minus" @click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
 </template>
 
 <style lang="stylus" scoped>
@@ -79,7 +79,7 @@
         margin-right 0
   .zoom
     font-size 1.1em
-    i
+    > *
       cursor pointer
       &:first-child
         margin-right 12px

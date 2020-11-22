@@ -10,6 +10,8 @@ import {
   faExpand,
   faCompress,
   faEllipsisH,
+  faSearchMinus,
+  faSearchPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
@@ -22,6 +24,8 @@ library.add(
   faExpand,
   faCompress,
   faEllipsisH,
+  faSearchMinus,
+  faSearchPlus,
 );
 
 Vue.component('FontAwesomeIcon', FontAwesomeIcon);
