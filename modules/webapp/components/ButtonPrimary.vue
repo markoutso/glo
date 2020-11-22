@@ -48,7 +48,7 @@ import { Vue, Component, Prop } from 'nuxt-property-decorator';
 @Component
 export default class ButtonPrimary extends Vue {
   @Prop() icon!: string;
-  @Prop() text!: string|undefined;
+  @Prop() text!: string | undefined;
   @Prop() color!: string;
   @Prop({ default: false }) disabled!: boolean;
 }

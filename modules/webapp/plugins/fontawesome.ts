@@ -6,11 +6,10 @@ import {
   faSpinner,
   faMoon,
   faSun,
-  faRunning,
-  faStop,
   faSave,
   faExpand,
   faCompress,
+  faEllipsisH,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
@@ -19,11 +18,10 @@ library.add(
   faSpinner,
   faMoon,
   faSun,
-  faRunning,
-  faStop,
   faSave,
   faExpand,
   faCompress,
+  faEllipsisH,
 );
 
 Vue.component('FontAwesomeIcon', FontAwesomeIcon);

@@ -1,6 +1,6 @@
 <template lang="pug">
   button.btn(
-    :class="`${color} ${disabled ? 'disabled' : ''}`"
+    :class="`${color} ${disabled ? 'disabled' : ''} ${animate ? 'animate' : ''}`"
     :disabled="disabled"
   )
     FontAwesomeIcon.icon(:icon="icon" :style="{...(!text && {fontSize: '1em'})}")
@@ -33,21 +33,21 @@
 .blue
   border: 2px solid #007bff
   color #007bff
-  &:hover
+  &.animate&:hover
     background #007bff
     color white
 
 .green
   border: 2px solid #28a745
   color #28a745
-  &:hover
+  &.animate&:hover
     background #28a745
     color white
 
 .black
   border: 2px solid #343A40
   color black
-  &:hover
+  &.animate&:hover
     background #343A40
     color white
 
@@ -55,7 +55,7 @@
   border: 2px solid #f8f8ff
   color #f8f8ff
   background black
-  &:hover
+  &.animate&:hover
     background #f8f8ff
     color black
 </style>
@@ -67,8 +67,9 @@ import { Vue, Component, Prop } from 'nuxt-property-decorator';
 @Component
 export default class ButtonSecondary extends Vue {
   @Prop() icon!: string;
-  @Prop() text!: string;
+  @Prop() text!: string | undefined;
   @Prop() color!: string;
   @Prop({ default: false }) disabled!: boolean;
+  @Prop({ default: true }) animate!: boolean;
 }
 </script>

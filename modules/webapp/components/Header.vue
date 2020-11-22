@@ -27,17 +27,24 @@
         :icon="!darkmode ? 'moon' : 'sun'"
         :color="!darkmode ? 'black' : 'white'"
       )
-      ButtonSecondary.animate(
-        @click.native="toggleAnimate"
-        :icon="!animating ? 'running' : 'stop'"
-        :color="!darkmode ? 'black' : 'white'"
-        :disabled="interpreting"
-      )
+      //- ButtonSecondary.animate(
+      //-   @click.native="toggleAnimate"
+      //-   :icon="!animating ? 'running' : 'stop'"
+      //-   :color="!darkmode ? 'black' : 'white'"
+      //-   :disabled="interpreting"
+      //- )
       ButtonSecondary.download(
         @click.native="download"
         icon="save"
         color="black"
         :color="!darkmode ? 'black' : 'white'"
+      )
+      ButtonDropdown.more-options(
+        :color="!darkmode ? 'black' : 'white'"
+        :menu="[ [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
+        @clickAnimate="toggleAnimate"
+        @clickCopyright="openCopyright"
+        @clickContact="openContact"
       )
       ButtonSecondary.fullscreen(
         @click.native="toggleFullscreen"
@@ -65,6 +72,7 @@
   .buttons
     display flex
     flex-direction row
+    align-items center
     > *
       margin-right 15px
       &:last-child
@@ -102,8 +110,8 @@
   .interpret
   .mode-switch
   .mode-switch-small
-  .animate
   .download
+  .more-options
   .fullscreen
   .zoom
     display none
@@ -122,11 +130,13 @@ import { Component, Vue, Prop, Emit } from 'nuxt-property-decorator';
 
 import ButtonPrimary from '../components/ButtonPrimary.vue';
 import ButtonSecondary from '../components/ButtonSecondary.vue';
+import ButtonDropdown from '../components/ButtonDropdown.vue';
 
 @Component({
   components: {
     ButtonPrimary,
     ButtonSecondary,
+    ButtonDropdown,
   },
 })
 export default class Header extends Vue {
@@ -164,6 +174,14 @@ export default class Header extends Vue {
 
   @Emit('increaseFontSize')
   increaseFontSize() {}
+
+  openCopyright() {
+    window.location.href = '/copyright.html';
+  }
+
+  openContact() {
+    window.location.href = '/contact.html';
+  }
 
   img(filename: string) {
     return require(`../assets/img/${filename}`)
