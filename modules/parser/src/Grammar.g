@@ -23,6 +23,7 @@ if_statement
 select_case
   : ("=" | "<>" | "<" | ">" | "<=" | ">=") expression
   | expression
+  | subrange
   ;
 
 select_statement
