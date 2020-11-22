@@ -11,6 +11,7 @@ import {
 import { IntegerConstantAST, VariableAST } from '@glossa-glo/ast';
 import GLOError, { assertEquality, assert } from '@glossa-glo/error';
 import { toUpperCaseNormalizedGreek } from '@glossa-glo/case-insensitive-map';
+import cloneDeep from 'lodash.clonedeep';
 
 export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   public scope: SymbolScope;
@@ -298,9 +299,10 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         node.args
           // Filter uninitialized variables
           .filter((arg, i) => !(args[i] instanceof Types.GLOVoid))
+          // Filter unitialized array indices
           .map(arg => arg.name)
           .forEach((argName, i) => {
-            scope.changeValue(argName, args[i]);
+            scope.changeValue(argName, cloneDeep(args[i]));
           });
 
         for (let i = 0; i < node.constantDeclarations.length; i++) {
