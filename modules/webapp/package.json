@@ -12,6 +12,9 @@
     "test": "exit 0"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.32",
+    "@fortawesome/free-solid-svg-icons": "^5.15.1",
+    "@fortawesome/vue-fontawesome": "2",
     "@glossa-glo/error": "^1.0.2-beta",
     "@glossa-glo/glo": "^1.1.2-beta",
     "@nuxt/typescript-build": "^0.6.6",

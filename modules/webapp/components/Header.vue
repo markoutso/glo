@@ -6,47 +6,47 @@
       ButtonPrimary.interpret(
         @click.native="interpret"
         :text="!interpreting ? 'Εκτέλεση' : 'Εκτελείται...'"
-        :icon="!interpreting ? 'fas fa-play' : 'fas fa-spinner'"
+        :icon="!interpreting ? 'play' : 'spinner'"
         :color="!interpreting ? 'green' : 'blue'"
         :disabled="actionBeingPerformed"
       )
       ButtonPrimary.interpret-small(
         @click.native="interpret"
-        :icon="!interpreting ? 'fas fa-play' : 'fas fa-spinner'"
+        :icon="!interpreting ? 'play' : 'spinner'"
         :color="!interpreting ? 'green' : 'blue'"
         :disabled="actionBeingPerformed"
       )
       ButtonSecondary.mode-switch(
         @click.native="toggleDarkmode"
-        :icon="!darkmode ? 'fas fa-moon' : 'fas fa-sun'"
+        :icon="!darkmode ? 'moon' : 'sun'"
         :text="!darkmode ? 'Λειτουργία Νύκτας' : 'Λειτουργία Μέρας'"
         :color="!darkmode ? 'black' : 'white'"
       )
       ButtonSecondary.mode-switch-small(
         @click.native="toggleDarkmode"
-        :icon="!darkmode ? 'fas fa-moon' : 'fas fa-sun'"
+        :icon="!darkmode ? 'moon' : 'sun'"
         :color="!darkmode ? 'black' : 'white'"
       )
       ButtonSecondary.animate(
         @click.native="toggleAnimate"
-        :icon="!animating ? 'fas fa-running' : 'fas fa-stop'"
+        :icon="!animating ? 'running' : 'stop'"
         :color="!darkmode ? 'black' : 'white'"
         :disabled="interpreting"
       )
       ButtonSecondary.download(
         @click.native="download"
-        icon="fas fa-save"
+        icon="save"
         color="black"
         :color="!darkmode ? 'black' : 'white'"
       )
       ButtonSecondary.fullscreen(
         @click.native="toggleFullscreen"
-        :icon="!fullscreen ? 'fas fa-expand' : 'fas fa-compress'"
+        :icon="!fullscreen ? 'expand' : 'compress'"
         :color="!darkmode ? 'black' : 'white'"
       )
     .zoom
-      i.fas.fa-search-plus(@click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
-      i.fas.fa-search-minus(@click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
+      i.fas.search-plus(@click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
+      i.fas.search-minus(@click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
 </template>
 
 <style lang="stylus" scoped>

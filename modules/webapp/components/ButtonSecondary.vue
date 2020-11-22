@@ -3,7 +3,7 @@
     :class="`${color} ${disabled ? 'disabled' : ''}`"
     :disabled="disabled"
   )
-    i.icon(:class="icon" :style="{...(!text && {fontSize: '1em'})}")
+    FontAwesomeIcon.icon(:icon="icon" :style="{...(!text && {fontSize: '1em'})}")
     .text(v-if="text") {{ text }}
 </template>
 
