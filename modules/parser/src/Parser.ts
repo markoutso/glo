@@ -343,7 +343,11 @@ export class Parser {
         }
       }
 
-      this.nl('Περίμενα νέα γραμμή μετά από τις περιπτώσεις δομής επιλογής');
+      this.nl(
+        `Περίμενα νέα γραμμή μετά από ${
+          conditions.length === 1 ? 'την περίπτωση' : 'τις περιπτώσεις'
+        } δομής επιλογής`,
+      );
 
       const statementList = this.statementList();
 
