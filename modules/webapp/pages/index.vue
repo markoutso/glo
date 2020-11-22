@@ -41,6 +41,7 @@
         autocapitalize="off"
         spellcheck="false"
         @keyup.enter="submitRead"
+        @blur="submitReadOnMobile"
       )
 </template>
 
@@ -212,12 +213,12 @@ export default class InterpreterPage extends Vue {
   get options() {
     return {
       tabSize: 4,
-      lineNumbers: this.onLoadWidth > 600 ? true : false,
+      lineNumbers: !this.isMobile,
       line: true,
       readOnly: this.actionBeingPerformed,
       theme: !this.darkmode ? 'eclipse' : 'darcula',
       mode: 'text/x-glossa',
-      styleActiveLine: this.onLoadWidth > 600 ? true : false,
+      styleActiveLine: !this.isMobile,
       styleSelectedText: true
     }
   }
@@ -260,12 +261,18 @@ export default class InterpreterPage extends Vue {
     this.console = [];
   }
 
-  async submitRead() {
+  submitRead() {
     if (this.readFunction) {
       this.consoleNewLine(this.read);
       this.readFunction(this.read ? this.read.split(' ') : []);
       this.read = '';
       this.readFunction = null;
+    }
+  }
+
+  submitReadOnMobile() {
+    if(this.isMobile) {
+      return this.submitRead();
     }
   }
 
@@ -375,10 +382,10 @@ export default class InterpreterPage extends Vue {
     this.fontSize = parseInt(this.fontSize.slice(0, -2)) - 1 + 'px';
   }
 
-  onLoadWidth: number = 0;
+  isMobile: boolean = false;
   created() {
-    this.onLoadWidth = innerWidth;
-    if(this.onLoadWidth <= 600) {
+    this.isMobile = innerWidth <= 600;
+    if(this.isMobile) {
       this.fontSize = '16px';
     }
   }
