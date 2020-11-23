@@ -3,7 +3,7 @@ A complete parser & interpreter for Glossa(Γλώσσα), the programming laungu
 
 This project also provides a CLI and a web interface to the interpreter(cli and webapp modules respectively).
 
-The programming language was created by the AEPP book authors and inspired by Pascal and BASI. All the commands are written in Greek and it does not have support for Object-oriented programming.
+The programming language was created by the AEPP book authors and inspired by Pascal and BASIC. All the commands are written in Greek and it does not have support for Object-oriented programming.
 
 ## Install
 The web application is hosted on [gloglossa.gr](https://gloglossa.gr)
