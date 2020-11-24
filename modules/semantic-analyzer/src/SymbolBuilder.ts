@@ -267,7 +267,7 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
       const symbol = this.visitVariable(node.left, true);
 
       if (symbol instanceof VariableSymbol && symbol.isConstant) {
-        throw new GLOError(symbol, 'Δεν μπορώ να αναθέσω τιμή σε σταθερά');
+        throw new GLOError(node.left, 'Δεν μπορώ να αναθέσω τιμή σε σταθερά');
       }
     } else {
       this.visit(node.left);
