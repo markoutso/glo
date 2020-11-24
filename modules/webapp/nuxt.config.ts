@@ -27,7 +27,10 @@ const config: Configuration = {
   modules: ['@nuxtjs/axios', 'nuxt-webfontloader'],
   webfontloader: {
     google: {
-      families: ['Roboto Mono'],
+      families: [
+        'Roboto Mono:400,600&display=swap',
+        'Roboto:400,600&display=swap',
+      ],
     },
   },
   build: {
