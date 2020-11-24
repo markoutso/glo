@@ -1,9 +1,9 @@
 # Glo [![Netlify Status](https://api.netlify.com/api/v1/badges/b104b1f2-41a1-4f81-b654-52dafd1dbc15/deploy-status)](https://app.netlify.com/sites/elastic-carson-b9d3c7/deploys)
-A complete parser & interpreter for Glossa(Γλώσσα), the programming launguage taught in the final year of Greek high school and included in the examinations for entrance to Greek universities.
+A complete parser & interpreter for Glossa(Γλώσσα), the programming language taught in the final year of Greek high school and included in the examinations for entrance to Greek universities.
 
 This project also provides a CLI and a web interface to the interpreter(cli and webapp modules respectively).
 
-The programming language was created by the AEPP book authors and inspired by Pascal and BASI. All the commands are written in Greek and it does not have support for Object-oriented programming.
+The programming language was created by the AEPP book authors and inspired by Pascal and BASIC. All the commands are written in Greek and it does not have support for Object-oriented programming.
 
 ## Install
 The web application is hosted on [gloglossa.gr](https://gloglossa.gr)
