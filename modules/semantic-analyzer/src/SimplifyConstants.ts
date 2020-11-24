@@ -330,6 +330,11 @@ export default class SimplifyConstants extends AST.ASTVisitor<Types.GLODataType 
     return null;
   }
 
+  public visitSwap(node: AST.SwapAST) {
+    node.children.forEach(this.visit.bind(this));
+    return null;
+  }
+
   public run() {
     return this.visit(this.ast);
   }

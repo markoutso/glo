@@ -24,7 +24,11 @@ export default class TypeChecker extends AST.ASTVisitor<
   private throwOnIOVisit = false;
   private throwOnIOVisitErrorMessageSuffix = '';
 
-  constructor(protected readonly ast: AST.AST, baseScope: BaseSymbolScope) {
+  constructor(
+    protected readonly ast: AST.AST,
+    baseScope: BaseSymbolScope,
+    public readonly isPseudocode: boolean,
+  ) {
     super();
     this.currentScope = baseScope;
   }
@@ -853,6 +857,11 @@ export default class TypeChecker extends AST.ASTVisitor<
   }
 
   public visitConstantDeclaration(node: AST.ConstantDeclarationAST) {
+    node.children.forEach(this.visit.bind(this));
+    return Types.GLOVoid;
+  }
+
+  public visitSwap(node: AST.SwapAST) {
     node.children.forEach(this.visit.bind(this));
     return Types.GLOVoid;
   }

@@ -8,7 +8,11 @@ import {
   VariableSymbol,
   GLOSymbol,
 } from '@glossa-glo/symbol';
-import { IntegerConstantAST, VariableAST } from '@glossa-glo/ast';
+import {
+  ArrayAccessAST,
+  IntegerConstantAST,
+  VariableAST,
+} from '@glossa-glo/ast';
 import GLOError, { assertEquality, assert } from '@glossa-glo/error';
 import { toUpperCaseNormalizedGreek } from '@glossa-glo/case-insensitive-map';
 import cloneDeep from 'clone-deep';
@@ -734,6 +738,41 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
         );
       }
     }
+
+    return new Types.GLOVoid();
+  }
+
+  public async visitSwap(node: AST.SwapAST) {
+    const get = async (node: AST.VariableAST | AST.ArrayAccessAST) => {
+      if (node instanceof AST.VariableAST) {
+        return this.scope.resolveValue(node.name);
+      } else if (node instanceof AST.ArrayAccessAST) {
+        return (this.scope.resolveValue(
+          node.array.name,
+        )! as Types.GLOArrayLike & Types.GLODataType).getValue(
+          await Promise.all(node.accessors.map(this.visit.bind(this))),
+        );
+      }
+    };
+    const set = async (
+      node: AST.VariableAST | AST.ArrayAccessAST,
+      val: Types.GLODataType,
+    ) => {
+      if (node instanceof AST.VariableAST) {
+        return this.scope.changeValue(node.name, val);
+      } else if (node instanceof AST.ArrayAccessAST) {
+        return this.scope.changeArrayValue(
+          node.array.name,
+          await Promise.all(node.accessors.map(this.visit.bind(this))),
+          val,
+        );
+      }
+    };
+
+    const valLeft = Object.assign({}, await get(node.left));
+    const valRight = Object.assign({}, await get(node.right));
+    await set(node.left, valLeft);
+    await set(node.right, valRight);
 
     return new Types.GLOVoid();
   }

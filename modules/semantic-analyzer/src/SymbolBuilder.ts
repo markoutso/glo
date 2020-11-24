@@ -14,7 +14,11 @@ import { VariableAST } from '@glossa-glo/ast';
 export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | void> {
   private currentScope: SymbolScope;
 
-  constructor(protected readonly ast: AST.AST, baseScope: BaseSymbolScope) {
+  constructor(
+    protected readonly ast: AST.AST,
+    baseScope: BaseSymbolScope,
+    public readonly isPseudocode: boolean,
+  ) {
     super();
     this.currentScope = baseScope;
   }
@@ -389,6 +393,10 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
   }
 
   public visitWrite(node: AST.WriteAST) {
+    node.children.forEach(this.visit.bind(this));
+  }
+
+  public visitSwap(node: AST.SwapAST) {
     node.children.forEach(this.visit.bind(this));
   }
 

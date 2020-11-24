@@ -2,11 +2,13 @@ import * as Lexer from '@glossa-glo/lexer';
 import * as AST from '@glossa-glo/ast';
 import * as Types from '@glossa-glo/data-types';
 import GLOError from '@glossa-glo/error';
+import { VariableAST } from '@glossa-glo/ast';
 
 export class Parser {
   private currentToken: Lexer.Token; // Only change through this.eat
   private previousToken: Lexer.Token | null = null; // Needed for better errors. Skips Lexer.NewLineToken
   private lexer: Lexer.Lexer;
+  public isPseudocode = false;
 
   constructor(lexer: Lexer.Lexer) {
     this.lexer = lexer;
@@ -751,60 +753,113 @@ export class Parser {
   }
 
   private program() {
-    const programToken = Object.assign({}, this.currentToken);
+    const token = Object.assign({}, this.currentToken);
 
     while (this.currentToken instanceof Lexer.NewLineToken) {
       this.currentToken = this.eat(Lexer.NewLineToken);
     }
 
-    this.currentToken = this.eat(
-      Lexer.ProgramToken,
-      'Περίμενα το πρόγραμμα να αρχίζει με εντολή ΠΡΟΓΡΑΜΜΑ',
-    );
+    if (
+      !(this.currentToken instanceof Lexer.ProgramToken) &&
+      !(this.currentToken instanceof Lexer.AlgorithmToken)
+    ) {
+      throw new GLOError(
+        this.currentToken,
+        'Περίμενα να δω ΠΡΟΓΡΑΜΜΑ ή ΑΛΓΟΡΙΘΜΟΣ για Γλώσσα ή Ψευδογλώσσα αντίστοιχα',
+      );
+    }
 
-    const programName = this.variable().name;
+    let name: string;
+    if (this.currentToken instanceof Lexer.ProgramToken) {
+      this.currentToken = this.eat(Lexer.ProgramToken);
+      this.lexer.isPseudocode = this.isPseudocode = false;
 
-    this.nl('Περίμενα νέα γραμμή μετά από το όνομα προγράμματος');
+      name = this.variable().name;
 
-    const {
-      constantDeclarations,
-      variableDeclarations,
-    } = this.constantOrVariableDeclaration();
+      this.nl('Περίμενα νέα γραμμή μετά από το όνομα προγράμματος');
+    } else {
+      this.currentToken = this.eat(Lexer.AlgorithmToken);
+      this.lexer.isPseudocode = this.isPseudocode = true;
 
-    this.currentToken = this.eat(
-      Lexer.BeginToken,
-      'Περίμενα ΑΡΧΗ μετά το τμήμα δηλώσεων προγράμματος',
-    );
+      name = this.variable().name;
 
-    this.nl('Περίμενα νέα γραμμή μετά από ΑΡΧΗ');
+      this.nl('Περίμενα νέα γραμμή μετά από το όνομα αλγορίθμου');
+    }
+
+    let constantDeclarations: AST.ConstantDeclarationAST[] = [];
+    let variableDeclarations: AST.VariableDeclarationAST[] = [];
+
+    const declarations = this.constantOrVariableDeclaration();
+    constantDeclarations = declarations.constantDeclarations;
+    variableDeclarations = declarations.variableDeclarations;
+
+    if (!this.isPseudocode) {
+      this.currentToken = this.eat(
+        Lexer.BeginToken,
+        'Περίμενα ΑΡΧΗ μετά το τμήμα δηλώσεων προγράμματος',
+      );
+
+      this.nl('Περίμενα νέα γραμμή μετά από ΑΡΧΗ');
+    }
 
     const statementList = this.statementList();
 
-    this.currentToken = this.eat(
-      Lexer.ProgramEndToken,
-      'Περίμενα ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ στο τέλος του προγράμματος',
-    );
+    let endVariable: VariableAST;
+    if (!this.isPseudocode) {
+      this.currentToken = this.eat(
+        Lexer.ProgramEndToken,
+        'Περίμενα ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ στο τέλος του προγράμματος',
+      );
+    } else {
+      this.currentToken = this.eat(
+        Lexer.EndToken,
+        'Περίμενα ΤΕΛΟΣ στο τέλος του αλγοριθμου',
+        this.currentToken instanceof Lexer.NewLineToken,
+      );
+      try {
+        endVariable = this.variable();
+        if (endVariable.name !== name) {
+          throw new GLOError(
+            this.currentToken,
+            `Περίμενα να δω το όνομα του αλγορίθμου '${name}' μετά το ΤΕΛΟΣ αλλά είδα '${endVariable.name}'`,
+          );
+        }
+      } catch {
+        throw new GLOError(
+          this.currentToken,
+          `Περίμενα να δω το όνομα του αλγορίθμου '${name}' μετά το ΤΕΛΟΣ`,
+        );
+      }
+    }
 
-    this.nl('Περίμενα νέα γραμμή μετά από ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ');
+    this.nl(
+      `Περίμενα νέα γραμμή μετά από ${
+        !this.isPseudocode ? 'ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ' : `ΤΕΛΟΣ ${endVariable!.name}`
+      }`,
+    );
 
     const subprogramDeclarations = this.subprogramDeclarations();
 
     if (!(this.currentToken instanceof Lexer.EofToken)) {
       throw new GLOError(
         this.currentToken,
-        'Περίμενα ΔΙΑΔΙΚΑΣΙΑ ή ΣΥΝΑΡΤΗΣΗ μετά από ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ',
+        `Περίμενα ΔΙΑΔΙΚΑΣΙΑ ή ΣΥΝΑΡΤΗΣΗ μετά από ${
+          !this.isPseudocode
+            ? 'ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ'
+            : `ΤΕΛΟΣ ${endVariable!.name}`
+        }`,
       );
     }
 
     return new AST.ProgramAST(
-      programName,
+      name,
       [
         ...constantDeclarations,
         ...variableDeclarations,
         ...subprogramDeclarations,
       ],
       statementList,
-    ).inheritPositionFrom(programToken);
+    ).inheritPositionFrom(token);
   }
 
   private statementList() {
@@ -889,9 +944,14 @@ export class Parser {
     return new AST.ReadAST(args).inheritPositionFrom(readToken);
   }
 
-  private writeStatement() {
+  private writeStatement(
+    token:
+      | typeof Lexer.WriteToken
+      | typeof Lexer.ShowToken
+      | typeof Lexer.PrintToken,
+  ) {
     const writeToken = Object.assign({}, this.currentToken);
-    this.currentToken = this.eat(Lexer.WriteToken);
+    this.currentToken = this.eat(token);
 
     if (this.currentToken instanceof Lexer.NewLineToken) {
       throw new GLOError(
@@ -918,6 +978,224 @@ export class Parser {
     return new AST.WriteAST(args).inheritPositionFrom(writeToken);
   }
 
+  private dataStatement() {
+    const variableOrArrayAccess = () => {
+      const variable = this.variable();
+      const dimensionLength = [];
+
+      let closingBracketToken: Lexer.ClosingBracketToken | null = null;
+
+      if (this.currentToken instanceof Lexer.OpeningBracketToken) {
+        this.currentToken = this.eat(Lexer.OpeningBracketToken);
+
+        dimensionLength.push(this.expression());
+
+        while (this.currentToken instanceof Lexer.CommaToken) {
+          this.currentToken = this.eat(Lexer.CommaToken);
+
+          if (this.currentToken instanceof Lexer.ClosingBracketToken) {
+            throw new GLOError(
+              this.previousToken!,
+              'Περίμενα έκφραση μετά το κόμμα στην πρόσβαση πίνακα',
+            );
+          }
+
+          dimensionLength.push(this.expression());
+        }
+
+        closingBracketToken = Object.assign({}, this.currentToken);
+
+        this.currentToken = this.eat(
+          Lexer.ClosingBracketToken,
+          'Περίμενα κλείσιμο αγκύλης μετά τον ορισμό πίνακα',
+          true,
+        );
+      }
+
+      if (dimensionLength.length) {
+        return new AST.ArrayAccessAST(variable, dimensionLength)
+          .inheritStartPositionFrom(variable.start)
+          .inheritEndPositionFrom(closingBracketToken!.end);
+      } else {
+        return variable;
+      }
+    };
+
+    const dataToken = Object.assign({}, this.currentToken);
+    this.currentToken = this.eat(Lexer.DataToken);
+
+    this.currentToken = this.eat(
+      Lexer.DoubleSlashToken,
+      'Περίμενα // μετά από ΔΕΔΟΜΕΝΑ',
+      this.currentToken instanceof Lexer.NewLineToken,
+    );
+
+    const args = [variableOrArrayAccess()];
+
+    while (this.currentToken instanceof Lexer.CommaToken) {
+      this.currentToken = this.eat(Lexer.CommaToken);
+
+      if (this.currentToken instanceof Lexer.NewLineToken) {
+        throw new GLOError(
+          this.previousToken!,
+          'Περίμενα μεταβλητή ή στοιχείο πίνακα μετά το κόμμα στην εντολή ΔΕΔΟΜΕΝΑ',
+        );
+      }
+
+      args.push(variableOrArrayAccess());
+    }
+
+    this.currentToken = this.eat(
+      Lexer.DoubleSlashToken,
+      'Περίμενα // μετά από παραμέτρους εντολής ΔΕΔΟΜΕΝΑ',
+      this.currentToken instanceof Lexer.NewLineToken,
+    );
+
+    return new AST.ReadAST(args).inheritPositionFrom(dataToken);
+  }
+
+  private resultsStatement() {
+    const resultsToken = Object.assign({}, this.currentToken);
+    this.currentToken = this.eat(Lexer.ResultsToken);
+
+    this.currentToken = this.eat(
+      Lexer.DoubleSlashToken,
+      'Περίμενα // μετά από ΑΠΟΤΕΛΕΣΜΑΤΑ',
+      this.currentToken instanceof Lexer.NewLineToken,
+    );
+
+    const args = [this.expression()];
+
+    while (this.currentToken instanceof Lexer.CommaToken) {
+      this.currentToken = this.eat(Lexer.CommaToken);
+
+      if (this.currentToken instanceof Lexer.NewLineToken) {
+        throw new GLOError(
+          this.previousToken!,
+          'Περίμενα έκφραση μετά το κόμμα στην εντολή ΑΠΟΤΕΛΕΣΜΑΤΑ',
+        );
+      }
+
+      args.push(this.expression());
+    }
+
+    this.currentToken = this.eat(
+      Lexer.DoubleSlashToken,
+      'Περίμενα // μετά από παραμέτρους εντολής ΑΠΟΤΕΛΕΣΜΑΤΑ',
+      this.currentToken instanceof Lexer.NewLineToken,
+    );
+
+    return new AST.WriteAST(args).inheritPositionFrom(resultsToken);
+  }
+
+  private swapStatement() {
+    this.currentToken = this.eat(Lexer.SwapToken);
+
+    if (!(this.currentToken instanceof Lexer.VariableToken)) {
+      throw new GLOError(
+        this.currentToken instanceof Lexer.NewLineToken
+          ? this.previousToken!
+          : this.currentToken,
+        'Περίμενα μεταβλητή μετά από ΑΝΤΙΜΕΤΑΘΕΣΕ',
+      );
+    }
+
+    const var1 = this.variable();
+    const dimensionLength1 = [];
+    let closingBracketToken1: Lexer.ClosingBracketToken;
+    if (this.currentToken instanceof Lexer.OpeningBracketToken) {
+      this.currentToken = this.eat(Lexer.OpeningBracketToken);
+
+      dimensionLength1.push(this.expression());
+
+      while (this.currentToken instanceof Lexer.CommaToken) {
+        this.currentToken = this.eat(Lexer.CommaToken);
+
+        if (this.currentToken instanceof Lexer.ClosingBracketToken) {
+          throw new GLOError(
+            this.previousToken!,
+            'Περίμενα έκφραση μετά το κόμμα στην πρόσβαση πίνακα',
+          );
+        }
+
+        dimensionLength1.push(this.expression());
+      }
+
+      closingBracketToken1 = Object.assign({}, this.currentToken);
+
+      this.currentToken = this.eat(
+        Lexer.ClosingBracketToken,
+        'Περίμενα κλείσιμο αγκύλης μετά τον ορισμό πίνακα',
+        true,
+      );
+    }
+
+    if (!(this.currentToken instanceof Lexer.VariableToken)) {
+      throw new GLOError(
+        this.currentToken instanceof Lexer.NewLineToken
+          ? this.previousToken!
+          : this.currentToken,
+        'Περίμενα μεταβλητή μετά από ΑΝΤΙΜΕΤΑΘΕΣΕ',
+      );
+    }
+
+    let arg1: AST.VariableAST | AST.ArrayAccessAST;
+    if (dimensionLength1.length) {
+      arg1 = new AST.ArrayAccessAST(var1, dimensionLength1)
+        .inheritStartPositionFrom(var1.start)
+        .inheritEndPositionFrom(closingBracketToken1!.end);
+    } else {
+      arg1 = var1;
+    }
+
+    this.currentToken = this.eat(
+      Lexer.CommaToken,
+      'Περίμενα κόμμα μετά από την πρώτη μεταβλητή εντολής ΑΝΤΙΜΕΤΑΘΕΣΕ',
+      this.currentToken instanceof Lexer.NewLineToken,
+    );
+
+    const var2 = this.variable();
+    const dimensionLength2 = [];
+    let closingBracketToken2: Lexer.ClosingBracketToken;
+    if (this.currentToken instanceof Lexer.OpeningBracketToken) {
+      this.currentToken = this.eat(Lexer.OpeningBracketToken);
+
+      dimensionLength2.push(this.expression());
+
+      while (this.currentToken instanceof Lexer.CommaToken) {
+        this.currentToken = this.eat(Lexer.CommaToken);
+
+        if (this.currentToken instanceof Lexer.ClosingBracketToken) {
+          throw new GLOError(
+            this.previousToken!,
+            'Περίμενα έκφραση μετά το κόμμα στην πρόσβαση πίνακα',
+          );
+        }
+
+        dimensionLength2.push(this.expression());
+      }
+
+      closingBracketToken2 = Object.assign({}, this.currentToken);
+
+      this.currentToken = this.eat(
+        Lexer.ClosingBracketToken,
+        'Περίμενα κλείσιμο αγκύλης μετά τον ορισμό πίνακα',
+        true,
+      );
+    }
+
+    let arg2: AST.VariableAST | AST.ArrayAccessAST;
+    if (dimensionLength2.length) {
+      arg2 = new AST.ArrayAccessAST(var2, dimensionLength2)
+        .inheritStartPositionFrom(var2.start)
+        .inheritEndPositionFrom(closingBracketToken2!.end);
+    } else {
+      arg2 = var1;
+    }
+
+    return new AST.SwapAST(arg1, arg2);
+  }
+
   private statement(): AST.AST {
     if (this.currentToken instanceof Lexer.CallToken) {
       return this.callProcedure();
@@ -936,7 +1214,17 @@ export class Parser {
     } else if (this.currentToken instanceof Lexer.ReadToken) {
       return this.readStatement();
     } else if (this.currentToken instanceof Lexer.WriteToken) {
-      return this.writeStatement();
+      return this.writeStatement(Lexer.WriteToken);
+    } else if (this.currentToken instanceof Lexer.PrintToken) {
+      return this.writeStatement(Lexer.PrintToken);
+    } else if (this.currentToken instanceof Lexer.ShowToken) {
+      return this.writeStatement(Lexer.ShowToken);
+    } else if (this.currentToken instanceof Lexer.DataToken) {
+      return this.dataStatement();
+    } else if (this.currentToken instanceof Lexer.ResultsToken) {
+      return this.resultsStatement();
+    } else if (this.currentToken instanceof Lexer.SwapToken) {
+      return this.swapStatement();
     } else {
       return this.empty();
     }

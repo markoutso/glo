@@ -17,12 +17,13 @@ export default async function interpret(
   },
 ): Promise<void> {
   const lexer = new Lexer(sourceCode);
-  const tree = new Parser(lexer).run();
+  const parser = new Parser(lexer);
+  const tree = parser.run();
   const baseScope = new BaseSymbolScope('root');
   injectLibraryToScope(baseScope);
   new SimplifyConstants(tree, baseScope).run();
-  new SymbolBuilder(tree, baseScope).run();
-  new TypeChecker(tree, baseScope).run();
+  new SymbolBuilder(tree, baseScope, parser.isPseudocode).run();
+  new TypeChecker(tree, baseScope, parser.isPseudocode).run();
   const interpreter = new Interpreter(tree, baseScope, options);
   await interpreter.run();
 }

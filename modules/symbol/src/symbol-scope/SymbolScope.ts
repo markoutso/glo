@@ -107,6 +107,8 @@ export default abstract class SymbolScope {
     if (symbol instanceof VariableSymbol && symbol.type.defaultValue) {
       this.value.set(symbol.name, symbol.type.defaultValue!);
     }
+
+    return symbol;
   }
 
   public has(symbol: GLOSymbol) {
