@@ -385,7 +385,13 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
   }
 
   public visitRead(node: AST.ReadAST) {
-    node.children.forEach(this.visit.bind(this));
+    node.children.forEach(child => {
+      const symbol = this.visit(child);
+
+      if (symbol instanceof VariableSymbol && symbol.isConstant) {
+        throw new GLOError(child, 'Δεν μπορώ να διαβάσω σταθερή τιμή');
+      }
+    });
   }
 
   public visitWrite(node: AST.WriteAST) {
