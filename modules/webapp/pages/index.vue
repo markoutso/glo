@@ -32,7 +32,7 @@
         v-show="(!console || !console.length) && !readFunction"
       ) Κονσόλα εισόδου/εξόδου
       li(v-for="item in console" v-html="item")
-      input.read(
+      input.read-input(
         rf="readInput"
         v-model="read"
         v-show="readFunction"
@@ -114,7 +114,7 @@ read-color-dark = #634903
     font-weight bold
     pointer-events none
     user-select none
-  .read
+  .read-input
     appearance none
     border 0
     width 100%
@@ -128,7 +128,7 @@ read-color-dark = #634903
       color #143ec9
     .placeholder
       color rgba(190,190,190,0.6)
-    .read
+    .read-input
       background read-color-dark
 </style>
 
