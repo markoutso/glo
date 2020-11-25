@@ -27,21 +27,16 @@
         :icon="!darkmode ? 'moon' : 'sun'"
         :color="!darkmode ? 'black' : 'white'"
       )
-      //- ButtonSecondary.animate(
-      //-   @click.native="toggleAnimate"
-      //-   :icon="!animating ? 'running' : 'stop'"
-      //-   :color="!darkmode ? 'black' : 'white'"
-      //-   :disabled="interpreting"
-      //- )
-      ButtonSecondary.download(
-        @click.native="download"
-        icon="save"
+      ButtonSecondary.input-file(
+        @click.native="toggleInputFile"
+        icon="file"
         color="black"
         :color="!darkmode ? 'black' : 'white'"
       )
       ButtonDropdown.more-options(
         :color="!darkmode ? 'black' : 'white'"
-        :menu="[ [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
+        :menu="[ ['Αποθήκευση', 'Download'], [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
+        @clickDownload="download"
         @clickAnimate="toggleAnimate"
         @clickCopyright="openCopyright"
         @clickContact="openContact"
@@ -54,6 +49,15 @@
     .zoom
       FontAwesomeIcon(icon="search-plus" @click="increaseFontSize" :class="darkmode ? 'darkmode' : ''")
       FontAwesomeIcon(icon="search-minus" @click="reduceFontSize" :class="darkmode ? 'darkmode' : ''")
+    Prompt(
+      v-if="showInputFile"
+      title="Αρχείο εισόδου"
+      buttonText="Υποβολή"
+      @close="closeInputFilePrompt"
+      @submit="submitInputFile"
+      :startValue="inputFile"
+      :darkmode="darkmode"
+    )
 </template>
 
 <style lang="stylus" scoped>
@@ -110,7 +114,7 @@
   .interpret
   .mode-switch
   .mode-switch-small
-  .download
+  .input-file
   .more-options
   .fullscreen
   .zoom
@@ -128,15 +132,19 @@
 import 'reflect-metadata';
 import { Component, Vue, Prop, Emit } from 'nuxt-property-decorator';
 
+import Prompt from '../components/Prompt.vue';
 import ButtonPrimary from '../components/ButtonPrimary.vue';
 import ButtonSecondary from '../components/ButtonSecondary.vue';
 import ButtonDropdown from '../components/ButtonDropdown.vue';
+
+import store from '../store';
 
 @Component({
   components: {
     ButtonPrimary,
     ButtonSecondary,
     ButtonDropdown,
+    Prompt,
   },
 })
 export default class Header extends Vue {
@@ -145,6 +153,20 @@ export default class Header extends Vue {
   @Prop() fullscreen!: boolean;
   @Prop() darkmode!: boolean;
   @Prop() actionBeingPerformed!: boolean;
+  showInputFile = false;
+
+  toggleInputFile() {
+    this.showInputFile = !this.showInputFile;
+  }
+  closeInputFilePrompt() {
+    this.showInputFile = false;
+  }
+  submitInputFile(value: string) {
+    store.inputFile = value;
+  }
+  get inputFile() {
+    return store.inputFile;
+  }
 
   @Emit('toggleDarkmode')
   toggleDarkmode() {}

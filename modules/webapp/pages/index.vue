@@ -104,6 +104,11 @@ read-color-dark = #634903
   >>> .error
     color #dc3545
     font-weight bold
+  >>> .info
+    color #1034A6
+    font-weight bold
+  >>> .read
+    color #8a6606
   .placeholder
     color rgba(65,65,65,0.5)
     font-weight bold
@@ -119,6 +124,8 @@ read-color-dark = #634903
   &.darkmode
     background black
     color #f8f8ff
+    >>> .info
+      color #143ec9
     .placeholder
       color rgba(190,190,190,0.6)
     .read
@@ -140,7 +147,13 @@ import 'codemirror/addon/selection/mark-selection.js'
 
 import '../glossa.js'
 
+import store from '../store';
+
 import Header from '../components/Header.vue';
+
+function addMissingTrailingNewline(str: string) {
+  return str[str.length - 1] === '\n' ? str : str + '\n'
+}
 
 @Component({
   components: {
@@ -240,12 +253,19 @@ export default class InterpreterPage extends Vue {
     URL.revokeObjectURL(url);
   }
 
-  consoleNewLine(message: string, error = false) {
-    this.console.push(
-      !error
-        ? `<div>${message}</div>`
-        : `<div class="error">Σφάλμα: ${message}</div>`,
-    );
+  consoleNewLine(message: string, type?: 'error'|'info'|'read') {
+    let str;
+    if(!type) {
+      str = `<div>${message}</div>`
+    } else if(type === 'info') {
+      str = `<div class="info">Ενημέρωση: ${message}</div>`;
+    } else if(type === 'read') {
+      str = `<div class="read">${message}</div>`;
+    } else if(type === 'error') {
+      str = `<div class="error">Σφάλμα: ${message}</div>`;
+    }
+
+    this.console.push(str);
 
     setTimeout(() => {
       if(this.$refs.console) {
@@ -263,7 +283,7 @@ export default class InterpreterPage extends Vue {
 
   submitRead() {
     if (this.readFunction) {
-      this.consoleNewLine(this.read);
+      this.consoleNewLine(this.read, 'read');
       this.readFunction(this.read ? this.read.split(' ') : []);
       this.read = '';
       this.readFunction = null;
@@ -284,20 +304,43 @@ export default class InterpreterPage extends Vue {
     this.consoleReset();
     this.interpreting = true;
 
+    await new Promise(resolve => {
+      setTimeout(resolve, 100);
+    })
+
+    let localInputFile = store.inputFile;
+
+    if(localInputFile) {
+      this.consoleNewLine('Διαβάζω από αρχείο εισόδου', 'info')
+      localInputFile = addMissingTrailingNewline(localInputFile);
+    }
+
     try {
       await gloInterpret(
-        this.sourceCode[this.sourceCode.length - 1] === '\n'
-          ? this.sourceCode
-          : this.sourceCode + '\n',
+        addMissingTrailingNewline(this.sourceCode),
         {
           read: lineNumber => {
-            this.highlightLine(lineNumber, 'read');
-            return new Promise(resolve => {
-              this.readFunction = (...args: any[]) => {
-                this.unhighlightLine(lineNumber, 'read');
-                return resolve(...args);
-              };
-            });
+            if(!store.inputFile) {
+              this.highlightLine(lineNumber, 'read');
+              return new Promise(resolve => {
+                this.readFunction = (...args: any[]) => {
+                  this.unhighlightLine(lineNumber, 'read');
+                  return resolve(...args);
+                };
+              });
+            } else {
+              const indexOfFirstNewLine = localInputFile.indexOf('\n');
+
+              if(indexOfFirstNewLine === -1) {
+                return Promise.resolve([]);
+              }
+
+              const line = localInputFile.substring(0, indexOfFirstNewLine);
+              this.consoleNewLine(line, 'read');
+              const results = line.split(' ')
+              localInputFile = localInputFile.substring(indexOfFirstNewLine + 1)
+              return Promise.resolve(results);
+            }
           },
           write: (...data) => {
             this.consoleNewLine(data.join(' '));
@@ -309,7 +352,7 @@ export default class InterpreterPage extends Vue {
       if (_error instanceof GLOError) {
         let error = _error as GLOError;
 
-        this.consoleNewLine(error.message, true);
+        this.consoleNewLine(error.message, 'error');
         if (
           // error.start.linePosition === error.end.linePosition &&
           error.start.linePosition !== -1 &&
@@ -347,7 +390,7 @@ export default class InterpreterPage extends Vue {
     this.consoleReset();
 
     if(this.sourceCode.split('\n').length < 3) {
-      this.consoleNewLine('Γράψε τουλάχιστον 3 γραμμές κώδικα για την λειτουργία Animation', true);
+      this.consoleNewLine('Γράψε τουλάχιστον 3 γραμμές κώδικα για την λειτουργία Animation', 'error');
     }
 
     this.animating = true;

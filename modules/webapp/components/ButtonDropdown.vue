@@ -3,7 +3,6 @@
     ButtonSecondary.btn(
       icon="ellipsis-h"
       :color="color"
-      :animate="false"
       :disabled="disabled"
       @click.native="toggleDropdown"
     )
@@ -17,21 +16,26 @@
   position relative
 
 .menu
-  font-size 1em
   position absolute
   left 0
   top 48px
-  padding 15px 0
   border-radius 1.1875rem
   .menu-item
     padding 15px
     cursor pointer
     text-align center
     white-space nowrap
+    letter-spacing .5px
+    font-size 13.7px
     &:first-child
-      padding-top 0
+      border-top-left-radius @border-radius
+      border-top-right-radius @border-radius
     &:last-child
-      padding-bottom 0
+      border-bottom-left-radius @border-radius
+      border-bottom-right-radius @border-radius
+    &:hover
+      background #454545
+      color white
   &.black
     color black
     background white
@@ -42,8 +46,12 @@
     color #f8f8ff
     background black
     border 1px solid rgba(190,190,190, 0.5)
-    .menu-item:not(:last-child)
-      border-bottom 1px solid rgba(190,190,190, 0.5)
+    .menu-item
+      &:not(:last-child)
+        border-bottom 1px solid rgba(190,190,190, 0.5)
+      &:hover
+        background #b0b0b0
+        color black
 
 
 </style>

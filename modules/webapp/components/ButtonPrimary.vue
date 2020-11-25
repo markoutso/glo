@@ -3,8 +3,8 @@
     :class="`${color} ${disabled ? 'disabled' : ''}`"
     :disabled="disabled"
   )
-    FontAwesomeIcon.icon(:icon="icon" :style="{...(!text && {fontSize: '1em'})}")
-    .text(v-if="text") {{ text }}
+    FontAwesomeIcon.icon(v-if="icon" :icon="icon" :style="{...(!text && {fontSize: '1em'})}")
+    .text(v-if="text" :class="!icon ? 'remove-margin' : ''") {{ text }}
 </template>
 
 <style lang="stylus" scoped>
@@ -28,6 +28,8 @@
     margin-left 9px
     font-weight 600
     letter-spacing .5px
+    &.remove-margin
+      margin-left 0
   &:hover
   &:focus
     box-shadow 0px 5px 9px rgba(0, 0, 0, 0.16)
@@ -47,7 +49,7 @@ import { Vue, Component, Prop } from 'nuxt-property-decorator';
 
 @Component
 export default class ButtonPrimary extends Vue {
-  @Prop() icon!: string;
+  @Prop() icon!: string | undefined;
   @Prop() text!: string | undefined;
   @Prop() color!: string;
   @Prop({ default: false }) disabled!: boolean;

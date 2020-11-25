@@ -43,6 +43,8 @@ export class Parser {
           ? throwEntirePreviousToken
             ? this.previousToken!
             : this.previousTokenEndLocationProvider
+          : this.currentToken instanceof Lexer.NewLineToken
+          ? this.peek()
           : this.currentToken,
         message ||
           `Expected ${this.currentToken.constructor.name} to be ${type.name}`,

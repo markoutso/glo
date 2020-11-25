@@ -6,12 +6,13 @@ import {
   faSpinner,
   faMoon,
   faSun,
-  faSave,
   faExpand,
   faCompress,
   faEllipsisH,
   faSearchMinus,
   faSearchPlus,
+  faTimes,
+  faFile,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
@@ -20,12 +21,13 @@ library.add(
   faSpinner,
   faMoon,
   faSun,
-  faSave,
   faExpand,
   faCompress,
   faEllipsisH,
   faSearchMinus,
   faSearchPlus,
+  faTimes,
+  faFile,
 );
 
 Vue.component('FontAwesomeIcon', FontAwesomeIcon);

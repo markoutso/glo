@@ -1,13 +1,13 @@
 <template lang="pug">
   #app
-    nuxt.nuxt
+    nuxt
 </template>
 
 <style lang="stylus">
 #app
   position relative
 
-.nuxt
+body
   font-family 'Roboto', sans-serif
   -webkit-font-smoothing antialiased
   -moz-osx-font-smoothing grayscale
