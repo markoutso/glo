@@ -17,6 +17,8 @@
   outline none
   display flex
   flex-direction row
+  align-items center
+  justify-content center
   transition all .5s
   background white
   &.disabled

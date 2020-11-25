@@ -79,6 +79,7 @@
     align-items center
     > *
       margin-right 15px
+      height 40px
       &:last-child
         margin-right 0
   .zoom
