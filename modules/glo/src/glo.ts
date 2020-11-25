@@ -1,4 +1,5 @@
 import { Lexer } from '@glossa-glo/lexer';
+import { AST } from '@glossa-glo/ast';
 import { Parser } from '@glossa-glo/parser';
 import { Interpreter } from '@glossa-glo/interpreter';
 import {
@@ -8,13 +9,12 @@ import {
 } from '@glossa-glo/semantic-analyzer';
 import { BaseSymbolScope, SymbolScope } from '@glossa-glo/symbol';
 import injectLibraryToScope from '@glossa-glo/library';
-
 export default async function interpret(
   sourceCode: string,
   options: {
     read: (linePosition: number) => Promise<string[]>;
     write: (...data: string[]) => Promise<void>;
-    interceptor?: (scope: SymbolScope) => Promise<void>;
+    interceptor?: (node: AST, scope: SymbolScope) => Promise<void>;
   },
 ): Promise<void> {
   const lexer = new Lexer(sourceCode);

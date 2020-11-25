@@ -22,7 +22,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
     private readonly options: {
       read: (lineNumber: number) => Promise<string[]>;
       write: (...data: string[]) => Promise<void>;
-      interceptor?: (scope: SymbolScope) => Promise<void>;
+      interceptor?: (node: AST.AST, scope: SymbolScope) => Promise<void>;
     },
   ) {
     super();
@@ -31,7 +31,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
 
   public async visit(node: AST.AST) {
     if (this.options.interceptor) {
-      await this.options.interceptor(this.scope);
+      await this.options.interceptor(node, this.scope);
     }
 
     return super.visit(node);
