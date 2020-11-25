@@ -17,7 +17,6 @@
   position relative
 
 .menu
-  font-size 1em
   position absolute
   left 0
   top 48px
@@ -28,6 +27,8 @@
     cursor pointer
     text-align center
     white-space nowrap
+    letter-spacing .5px
+    font-size 13.7px
     &:first-child
       padding-top 0
     &:last-child

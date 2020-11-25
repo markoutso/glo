@@ -12,6 +12,7 @@ import {
   faEllipsisH,
   faSearchMinus,
   faSearchPlus,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
@@ -26,6 +27,7 @@ library.add(
   faEllipsisH,
   faSearchMinus,
   faSearchPlus,
+  faTimes,
 );
 
 Vue.component('FontAwesomeIcon', FontAwesomeIcon);
