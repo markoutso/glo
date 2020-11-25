@@ -6,7 +6,7 @@ import {
   TypeChecker,
   SimplifyConstants,
 } from '@glossa-glo/semantic-analyzer';
-import { BaseSymbolScope } from '@glossa-glo/symbol';
+import { BaseSymbolScope, SymbolScope } from '@glossa-glo/symbol';
 import injectLibraryToScope from '@glossa-glo/library';
 
 export default async function interpret(
@@ -14,6 +14,7 @@ export default async function interpret(
   options: {
     read: (linePosition: number) => Promise<string[]>;
     write: (...data: string[]) => Promise<void>;
+    interceptor?: (scope: SymbolScope) => Promise<void>;
   },
 ): Promise<void> {
   const lexer = new Lexer(sourceCode);
