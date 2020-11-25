@@ -190,6 +190,7 @@ export class Parser {
     let currentIf = firstIf;
 
     while (this.currentToken instanceof Lexer.ElseIfToken) {
+      const elseIfToken = Object.assign({}, this.currentToken);
       this.currentToken = this.eat(Lexer.ElseIfToken);
 
       const condition = this.expression();
@@ -204,7 +205,9 @@ export class Parser {
 
       const statementList = this.statementList();
 
-      const newIf = new AST.IfAST(condition, statementList);
+      const newIf = new AST.IfAST(condition, statementList).inheritPositionFrom(
+        elseIfToken,
+      );
 
       currentIf.addNext(newIf);
       currentIf = newIf;
@@ -311,6 +314,7 @@ export class Parser {
     const ifStatements: AST.IfAST[] = [];
 
     do {
+      const caseToken = Object.assign({}, this.currentToken);
       this.currentToken = this.eat(
         Lexer.CaseToken,
         'Περίμενα ΠΕΡΙΠΤΩΣΗ μέσα στη δομή επιλογής',
@@ -358,7 +362,11 @@ export class Parser {
         else return new AST.OrAST(conditions[0], orify(conditions.slice(1)));
       }
 
-      ifStatements.push(new AST.IfAST(orify(conditions), statementList));
+      ifStatements.push(
+        new AST.IfAST(orify(conditions), statementList).inheritPositionFrom(
+          caseToken,
+        ),
+      );
     } while (
       this.currentToken instanceof Lexer.CaseToken &&
       !(this.peek() instanceof Lexer.ElseToken)
@@ -398,6 +406,7 @@ export class Parser {
     const declarations: AST.ConstantDeclarationAST[] = [];
 
     do {
+      const variableToken = Object.assign({}, this.currentToken);
       const variable = this.variable();
 
       this.currentToken = this.eat(
@@ -414,7 +423,12 @@ export class Parser {
 
       const expression = this.expression();
 
-      declarations.push(new AST.ConstantDeclarationAST(variable, expression));
+      declarations.push(
+        new AST.ConstantDeclarationAST(
+          variable,
+          expression,
+        ).inheritPositionFrom(variableToken),
+      );
 
       this.nl('Περίμενα νέα γραμμή μετά τη δήλωση σταθεράς');
     } while (this.currentToken instanceof Lexer.IdToken);
@@ -424,6 +438,7 @@ export class Parser {
 
   private variableDeclaration() {
     const variableOrArrayDeclaration = (type: AST.TypeAST) => {
+      const variableToken = Object.assign({}, this.currentToken);
       const variable = this.variable();
       const dimensionLength = [];
 
@@ -456,9 +471,12 @@ export class Parser {
         return new AST.VariableDeclarationAST(
           variable,
           new AST.ArrayAST(dimensionLength, type),
-        );
+        ).inheritPositionFrom(variableToken);
       } else {
-        return new AST.VariableDeclarationAST(variable, type);
+        return new AST.VariableDeclarationAST(
+          variable,
+          type,
+        ).inheritPositionFrom(variableToken);
       }
     };
 
@@ -945,18 +963,20 @@ export class Parser {
   }
 
   private functionReturnType() {
+    const savedToken = Object.assign({}, this.currentToken);
+
     if (this.currentToken instanceof Lexer.IntegerSingularToken) {
       this.currentToken = this.eat(Lexer.IntegerSingularToken);
-      return new AST.IntegerAST();
+      return new AST.IntegerAST().inheritPositionFrom(savedToken);
     } else if (this.currentToken instanceof Lexer.RealSingularToken) {
       this.currentToken = this.eat(Lexer.RealSingularToken);
-      return new AST.RealAST();
+      return new AST.RealAST().inheritPositionFrom(savedToken);
     } else if (this.currentToken instanceof Lexer.StringSingularToken) {
       this.currentToken = this.eat(Lexer.StringSingularToken);
-      return new AST.StringAST();
+      return new AST.StringAST().inheritPositionFrom(savedToken);
     } else if (this.currentToken instanceof Lexer.BooleanSingularToken) {
       this.currentToken = this.eat(Lexer.BooleanSingularToken);
-      return new AST.BooleanAST();
+      return new AST.BooleanAST().inheritPositionFrom(savedToken);
     } else if (this.currentToken instanceof Lexer.IdToken) {
       throw new GLOError(
         this.currentToken,
@@ -1031,7 +1051,7 @@ export class Parser {
   }
 
   private empty() {
-    return new AST.EmptyAST().inheritPositionFrom(this.currentToken);
+    return new AST.EmptyAST();
   }
 
   private expression() {
@@ -1133,8 +1153,11 @@ export class Parser {
   private power(): AST.AST {
     const atom = this.atom();
     if (this.currentToken instanceof Lexer.ExponentiationToken) {
+      const exponentiationToken = Object.assign({}, this.currentToken);
       this.currentToken = this.eat(Lexer.ExponentiationToken);
-      return new AST.ExponentiationAST(atom, this.power());
+      return new AST.ExponentiationAST(atom, this.power()).inheritPositionFrom(
+        exponentiationToken,
+      );
     } else {
       return atom;
     }
