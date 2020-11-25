@@ -27,22 +27,16 @@
         :icon="!darkmode ? 'moon' : 'sun'"
         :color="!darkmode ? 'black' : 'white'"
       )
-      //- ButtonSecondary.animate(
-      //-   @click.native="toggleAnimate"
-      //-   :icon="!animating ? 'running' : 'stop'"
-      //-   :color="!darkmode ? 'black' : 'white'"
-      //-   :disabled="interpreting"
-      //- )
-      ButtonSecondary.download(
-        @click.native="download"
-        icon="save"
+      ButtonSecondary.input-file(
+        @click.native="toggleInputFile"
+        icon="file"
         color="black"
         :color="!darkmode ? 'black' : 'white'"
       )
       ButtonDropdown.more-options(
         :color="!darkmode ? 'black' : 'white'"
-        :menu="[ ['Αρχείο Εισόδου', 'InputFile'], [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
-        @clickInputFile="toggleInputFile"
+        :menu="[ ['Αποθήκευση', 'Download'], [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
+        @clickDownload="download"
         @clickAnimate="toggleAnimate"
         @clickCopyright="openCopyright"
         @clickContact="openContact"
@@ -120,7 +114,7 @@
   .interpret
   .mode-switch
   .mode-switch-small
-  .download
+  .input-file
   .more-options
   .fullscreen
   .zoom
