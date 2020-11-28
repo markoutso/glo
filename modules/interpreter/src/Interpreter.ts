@@ -84,6 +84,9 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
           `Ο δείκτης του πίνακα '${left.array.name}' πρέπει να είναι μεγαλύτερος ή ίσος του 1'`,
         );
 
+        // TODO: Fix this hack
+        const lP = dimensionLength[i].start.linePosition;
+        dimensionLength[i].start.linePosition = -1;
         assert(
           left.accessors[i],
           accessorValue.lessEqualsThan(await this.visit(dimensionLength[i])),
@@ -91,6 +94,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
             left.array.name
           }' έχει τιμή ${accessorValue.print()}, εκτός ορίων του πίνακα`,
         );
+        dimensionLength[i].start.linePosition = lP;
       }
 
       this.scope.changeArrayValue(left.array.name, accessorValues, newValue);

@@ -9,7 +9,7 @@ import {
 } from '@glossa-glo/symbol';
 import * as GLOSymbol from '@glossa-glo/symbol';
 import GLOError from '@glossa-glo/error';
-import { VariableAST } from '@glossa-glo/ast';
+import { ArrayAST, VariableAST } from '@glossa-glo/ast';
 
 export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | void> {
   private currentScope: SymbolScope;

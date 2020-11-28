@@ -14,8 +14,10 @@ export default function printType(type: typeof GLODataType): string {
   if (type && type.multitype) return type.multitype.map(printType).join(' ή ');
   else if (type && type.isArrayType)
     return `Πίνακας από ${printType((type as any).componentType)} ${
-      (type as any).dimensionLength
-    } ${(type as any).dimensionLength === 1 ? 'διάστασης' : 'διαστάσεων'}`;
+      (type as any).dimensionLength.length
+    } ${
+      (type as any).dimensionLength.length === 1 ? 'διάστασης' : 'διαστάσεων'
+    }`;
   else if (type === GLOBoolean) return 'Λογική';
   else if (type === GLOString) return 'Χαρακτήρες';
   else if (type === GLOInteger) return 'Ακέραια';

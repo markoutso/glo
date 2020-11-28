@@ -3,7 +3,12 @@ import CaseInsensitiveMap, {
   toUpperCaseNormalizedGreek,
 } from '@glossa-glo/case-insensitive-map';
 import ScopeChildren from './ScopeChildren';
-import { GLODataType, GLOArrayLike, GLOFunction } from '@glossa-glo/data-types';
+import {
+  GLODataType,
+  GLOArrayLike,
+  GLOFunction,
+  printType,
+} from '@glossa-glo/data-types';
 import GLOError from '@glossa-glo/error';
 import { FunctionSymbol, VariableSymbol } from '../symbol';
 import { SymbolScopeType } from './SymbolScopeType';
@@ -125,5 +130,38 @@ export default abstract class SymbolScope {
     } else {
       return null;
     }
+  }
+
+  // For step execution
+  public getVariablesAndConstants() {
+    const variableOrConstantList: {
+      name: string;
+      type: string;
+      value: string | undefined;
+      isConstant: boolean;
+      dimensionLength: number[] | undefined;
+    }[] = [];
+
+    for (const [k, v] of this.scope) {
+      if (v instanceof VariableSymbol) {
+        const value = this.resolveValue(k);
+
+        variableOrConstantList.push({
+          name: this.scope.originalKey.get(k)!,
+          type: v.type.isArrayType ? 'Πίνακας' : printType(v.type),
+          value: value
+            ? !v.type.isArrayType
+              ? value.print()
+              : (value as any).arrayPrint()
+            : undefined,
+          isConstant: v.isConstant,
+          dimensionLength: v.type.isArrayType
+            ? (value as any).dimensionLength
+            : undefined,
+        });
+      }
+    }
+
+    return variableOrConstantList;
   }
 }

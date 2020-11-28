@@ -2,26 +2,37 @@
   .page(ref="page" @change="fullscreenChange")
     Header(
       :interpreting="interpreting"
+      :stepInterpreting="stepInterpreting"
       :animating="animating"
       :fullscreen="fullscreen"
       :darkmode="darkmode"
       :actionBeingPerformed="actionBeingPerformed"
+      :lastStep="lastStep"
       @interpret="interpret"
+      @stepInterpret="stepInterpret"
+      @nextStep="nextStep"
+      @stop="stop"
+      @stopStep="stopStep"
       @toggleFullscreen="toggleFullscreen"
       @toggleDarkmode="toggleDarkmode"
       @animate="animate"
       @reduceFontSize="reduceFontSize"
       @increaseFontSize="increaseFontSize"
-      @stopAnimate="stopAnimate"
       @download="download"
     )
     codemirror.editor(
       ref="editor"
       v-model="appropriateSourceCode"
       :options="options"
-      :class="darkmode ? 'darkmode' : ''"
+      :class="{darkmode: darkmode, 'scope-shown': currentStepScope}"
       :style="{fontSize}"
       @focus="clearError"
+    )
+    SymbolScope.symbol-scope(
+      v-if="currentStepScope && !currentStepScopeIsBaseScope"
+      :scope="currentStepScope"
+      :node="currentNode"
+      :darkmode="darkmode"
     )
     ol.console(
       ref="console"
@@ -54,11 +65,14 @@ console-margin = 5px
 read-color = #fcba03
 read-color-dark = #634903
 
+symbol-scope-width = 300px
+
 >>> .header
   height header-height
 
 .page
   background white
+  position relative
 
 .editor
   height "calc(100vh - %s - %s)" % (header-height console-height)
@@ -76,12 +90,25 @@ read-color-dark = #634903
     background read-color
   >>> .error
     background rgba(255, 0, 0, 0.35)
+  >>> .step
+    background cyan
   >>> *
-    line-height 1.25
+    line-height 1
     font-family "Roboto Mono", monospace
+  &.scope-shown
+    margin-right symbol-scope-width
   &.darkmode
     >>> .read
       background read-color-dark
+    >>> .step
+      background #007e82
+
+.symbol-scope
+  position absolute
+  top header-height
+  bottom console-height
+  right 0
+  width symbol-scope-width
 
 .console
   height console-height
@@ -135,8 +162,9 @@ read-color-dark = #634903
 <script lang="ts">
 import 'reflect-metadata';
 import { Component, Vue } from 'nuxt-property-decorator';
-import gloInterpret from '@glossa-glo/glo';
+import gloInterpret, { Options as GloOptions} from '@glossa-glo/glo';
 import GLOError, { DebugInfoProviderLike } from '@glossa-glo/error';
+import { ArrayAccessAST, AST, ProgramAST } from '@glossa-glo/ast';
 
 import { CodeMirror, codemirror } from 'vue-codemirror';
 import 'codemirror/lib/codemirror.css';
@@ -150,6 +178,9 @@ import '../glossa.js'
 import store from '../store';
 
 import Header from '../components/Header.vue';
+import SymbolScopeComponent from '../components/SymbolScope.vue';
+import { BaseSymbolScope, SymbolScope } from '@glossa-glo/symbol';
+import { VariableDeclarationAST, ConstantDeclarationAST, ProcedureDeclarationAST, FunctionDeclarationAST, VariableAST } from '@glossa-glo/ast';
 
 function addMissingTrailingNewline(str: string) {
   return str[str.length - 1] === '\n' ? str : str + '\n'
@@ -158,7 +189,8 @@ function addMissingTrailingNewline(str: string) {
 @Component({
   components: {
     Header,
-    codemirror
+    codemirror,
+    SymbolScope: SymbolScopeComponent,
   },
   mixins: [require('vue-save-state').default]
 })
@@ -191,27 +223,29 @@ export default class InterpreterPage extends Vue {
     }, {className: 'error'});
   }
 
-  highlightLine(line: number, className: string) {
+  highlightLine(line: number, type: 'read'|'step') {
     const cm = this.$refs.editor.codemirror;
 
-    cm.addLineClass(line, 'background', className);
+    cm.addLineClass(line, 'background', type);
   }
 
-  unhighlightLine(line: number, className: string) {
+  unhighlightLine(line: number, type: 'read'|'step') {
     const cm = this.$refs.editor.codemirror;
 
-    cm.removeLineClass(line, 'background', className);
+    cm.removeLineClass(line, 'background', type);
   }
 
   sourceCode: string = '';
   console: string[] = [];
   read = '';
   interpreting = false;
+  stepInterpreting = false;
+  lastStep = false;
   animating = false;
-  readFunction: ((values: string[]) => void) | null = null;
+  readFunction: ((values: string[], rejectPromise?: boolean) => void) | null = null;
 
   get actionBeingPerformed() {
-    return this.interpreting || this.animating;
+    return this.interpreting || this.stepInterpreting || this.lastStep || this.animating;
   }
 
   get appropriateSourceCode() {
@@ -296,13 +330,13 @@ export default class InterpreterPage extends Vue {
     }
   }
 
-  async interpret() {
-    if (this.actionBeingPerformed) return;
+  async interpret(options?: Partial<GloOptions>, ignoreActionBeingPerformed = false) {
+    if (!ignoreActionBeingPerformed && this.actionBeingPerformed) return;
 
     this.clearError();
 
     this.consoleReset();
-    this.interpreting = true;
+    if(!ignoreActionBeingPerformed) this.interpreting = true;
 
     await new Promise(resolve => {
       setTimeout(resolve, 100);
@@ -319,13 +353,21 @@ export default class InterpreterPage extends Vue {
       await gloInterpret(
         addMissingTrailingNewline(this.sourceCode),
         {
+          ...options,
           read: lineNumber => {
             if(!store.inputFile) {
               this.highlightLine(lineNumber, 'read');
-              return new Promise(resolve => {
-                this.readFunction = (...args: any[]) => {
+              return new Promise((resolve,reject) => {
+                this.readFunction = (args: string[], resolvePromise = false) => {
                   this.unhighlightLine(lineNumber, 'read');
-                  return resolve(...args);
+
+                  if(resolvePromise) {
+                    this.read = '';
+                    this.readFunction = null;
+                    return reject();
+                  }
+
+                  return resolve(args);
                 };
               });
             } else {
@@ -362,7 +404,105 @@ export default class InterpreterPage extends Vue {
           this.highlightError(error);
       }
     }
-    this.interpreting = false;
+
+    if(!ignoreActionBeingPerformed) this.interpreting = false;
+  }
+
+  stepInterpretFunction: (nextLine: number, rejectPromise?: boolean) => void = () => { return; };
+  nextLine = 0;
+  currentStepScope: SymbolScope|null = null;
+  currentNode: AST|null = null;
+
+  get currentStepScopeIsBaseScope() {
+    return this.currentStepScope && this.currentStepScope.type === 'root';
+  }
+
+  async nextStep() {
+    if(this.stepInterpreting && this.stepInterpretFunction) {
+      this.stepInterpretFunction(this.nextLine);
+    }
+  }
+
+  async stepInterpret() {
+    if(this.currentStepScope) {
+      return this.currentStepScope = null;
+    }
+
+    this.stepInterpreting = true;
+
+    let currentLine: number|null = null;
+
+    return this.interpret({
+      interceptor: (node, scope) => {
+        return new Promise((resolve, reject) => {
+          this.currentNode = node;
+          const line = node.start.linePosition;
+
+          console.log('visitn node', node.constructor.name, 'line', line)
+
+          const ignoreList = [
+            ProgramAST,
+            VariableDeclarationAST,
+            ConstantDeclarationAST,
+            ProcedureDeclarationAST,
+            FunctionDeclarationAST,
+            VariableAST,
+            ArrayAccessAST,
+          ];
+
+          for(const Constructor of ignoreList) {
+            if(node instanceof Constructor) {
+              return resolve();
+            }
+          }
+
+          if(line === currentLine || line === -1) {
+            return resolve();
+          } else {
+            if(currentLine === null) currentLine = line;
+
+            this.highlightLine(line, 'step');
+            this.stepInterpretFunction = (nextLine: number, rejectPromise = false) => {
+              if(rejectPromise) {
+                this.unhighlightLine(line, 'step');
+                this.currentStepScope = null;
+                return reject();
+              }
+              this.unhighlightLine(line, 'step');
+              currentLine = nextLine;
+              this.currentStepScope = scope;
+              return resolve();
+            };
+            this.nextLine = line;
+          }
+        })
+      }
+    }, true).then(() => {
+      this.stepInterpreting = false;
+      this.nextLine = 0;
+      if(this.currentStepScope) {
+        this.lastStep = true;
+      }
+    });
+  }
+
+  async stop() {
+    if(this.animating) {
+      return this.stopAnimate();
+    }
+
+    if(this.readFunction) {
+      this.readFunction([], true);
+    }
+
+    if(this.stepInterpretFunction) {
+      await this.stepInterpretFunction(this.nextLine, true);
+    }
+  }
+
+  stopStep() {
+    this.lastStep = false;
+    this.currentStepScope = null;
   }
 
   fullscreen: boolean = false;
@@ -419,10 +559,16 @@ export default class InterpreterPage extends Vue {
 
   fontSize = '17px';
   increaseFontSize() {
-    this.fontSize = parseInt(this.fontSize.slice(0, -2)) + 1 + 'px';
+    const currentFontSize = parseInt(this.fontSize.slice(0, -2));
+
+    if(currentFontSize < 30)
+      this.fontSize = currentFontSize + 1 + 'px';
   }
   reduceFontSize() {
-    this.fontSize = parseInt(this.fontSize.slice(0, -2)) - 1 + 'px';
+    const currentFontSize = parseInt(this.fontSize.slice(0, -2));
+
+    if(currentFontSize > 13)
+      this.fontSize = currentFontSize - 1 + 'px';
   }
 
   isMobile: boolean = false;

@@ -52,8 +52,6 @@
       &:hover
         background #b0b0b0
         color black
-
-
 </style>
 
 <script lang="ts">

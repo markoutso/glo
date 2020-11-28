@@ -43,6 +43,10 @@
 .green
   color white
   background #28a745
+
+.red
+  color white
+  background #dc3545
 </style>
 
 <script lang="ts">

@@ -15,17 +15,47 @@ export interface GLOArrayLike {
 
 export default function createGLOArray(
   componentType: typeof GLOType,
-  dimensionLength: number,
+  dimensionLength: number[],
 ) {
   return class GLOArray extends GLODataType implements GLOArrayLike {
     public static isArrayType = true;
     public isArray = true;
     public static componentType = componentType;
     public static dimensionLength = dimensionLength;
+    public dimensionLength = dimensionLength;
 
     public static defaultValue = new GLOArray();
 
     public readonly value: any;
+
+    // Cannot use name print as it is used
+    // To determine whether the data type
+    // can be written with the write command
+    // TODO: Make more efficient, allow n-dimensional arrays
+    arrayPrint() {
+      if (this.dimensionLength.length === 1) {
+        const arr = new Array(this.dimensionLength[0] + 1);
+        for (let i = 1; i <= this.dimensionLength[0]; i++) {
+          if (this.value[i] instanceof GLODataType) {
+            arr[i] = this.value[i].print();
+          }
+        }
+        return arr;
+      } else if (this.dimensionLength.length === 2) {
+        const arr = new Array(this.dimensionLength[0] + 1);
+        for (let i = 1; i <= this.dimensionLength[0]; i++) {
+          arr[i] = new Array(this.dimensionLength[1] + 1);
+          for (let j = 1; j <= this.dimensionLength[1]; j++) {
+            if (this.value[i] && this.value[i][j] instanceof GLODataType) {
+              arr[i][j] = this.value[i][j].print();
+            }
+          }
+        }
+        return arr;
+      } else {
+        return [];
+      }
+    }
 
     constructor() {
       super();

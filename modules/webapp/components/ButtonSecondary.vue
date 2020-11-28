@@ -46,6 +46,13 @@
     background #28a745
     color white
 
+.green
+  border: 2px solid #dc3545
+  color #dc3545
+  &.animate&:hover
+    background #dc3545
+    color white
+
 .black
   border: 2px solid #343A40
   color black
