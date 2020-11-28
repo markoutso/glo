@@ -438,8 +438,6 @@ export default class InterpreterPage extends Vue {
           this.currentNode = node;
           const line = node.start.linePosition;
 
-          console.log('visitn node', node.constructor.name, 'line', line)
-
           const ignoreList = [
             ProgramAST,
             VariableDeclarationAST,
