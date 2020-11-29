@@ -4,28 +4,44 @@
     img.logo.logo-small(:src="!darkmode ? img('logo-day-small.png') : img('logo-night-small.png')")
     .buttons
       ButtonPrimary.interpret(
+        v-if="!actionBeingPerformed"
         @click.native="interpret"
         :text="!interpreting ? 'Εκτέλεση' : 'Εκτελείται...'"
+        :icon="!interpreting ? 'play' : 'spinner'"
+        :color="!interpreting ? 'green' : 'blue'"
+      )
+      ButtonPrimary.interpret(
+        v-else
+        @click.native="stop"
+        text="Διακοπή"
+        icon="stop"
+        color="red"
+      )
+      ButtonPrimary.interpret-small(
+        v-if="!actionBeingPerformed"
+        @click.native="interpret"
         :icon="!interpreting ? 'play' : 'spinner'"
         :color="!interpreting ? 'green' : 'blue'"
         :disabled="actionBeingPerformed"
       )
       ButtonPrimary.interpret-small(
-        @click.native="interpret"
-        :icon="!interpreting ? 'play' : 'spinner'"
-        :color="!interpreting ? 'green' : 'blue'"
-        :disabled="actionBeingPerformed"
+        v-else
+        @click.native="stop"
+        icon="stop"
+        color="red"
       )
-      ButtonSecondary.mode-switch(
-        @click.native="toggleDarkmode"
-        :icon="!darkmode ? 'moon' : 'sun'"
-        :text="!darkmode ? 'Λειτουργία Νύκτας' : 'Λειτουργία Μέρας'"
+      ButtonSecondary.step-interpret(
+        @click.native="stepFunction"
+        :text="!stepInterpreting ? !lastStep ? 'Βηματική Εκτέλεση' : 'Τέλος Εκτέλεσης' : 'Επόμενο Βήμα'"
+        :icon="!stepInterpreting ? !lastStep ? 'walking' : 'stop' : 'forward'"
         :color="!darkmode ? 'black' : 'white'"
+        :disabled="actionBeingPerformed && !stepInterpreting && !lastStep"
       )
-      ButtonSecondary.mode-switch-small(
-        @click.native="toggleDarkmode"
-        :icon="!darkmode ? 'moon' : 'sun'"
+      ButtonSecondary.step-interpret-small(
+        @click.native="stepFunction"
+        :icon="!stepInterpreting ? !lastStep ? 'walking' : 'stop' : 'forward'"
         :color="!darkmode ? 'black' : 'white'"
+        :disabled="actionBeingPerformed && !stepInterpreting && !lastStep"
       )
       ButtonSecondary.input-file(
         @click.native="toggleInputFile"
@@ -33,9 +49,14 @@
         color="black"
         :color="!darkmode ? 'black' : 'white'"
       )
+      ButtonSecondary.mode-switch(
+        @click.native="toggleDarkmode"
+        :icon="!darkmode ? 'moon' : 'sun'"
+        :color="!darkmode ? 'black' : 'white'"
+      )
       ButtonDropdown.more-options(
         :color="!darkmode ? 'black' : 'white'"
-        :menu="[ ['Αποθήκευση', 'Download'], [!animating ? 'Animate' : 'Στοπ Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
+        :menu="[ ['Αποθήκευση', 'Download'], ['Animate', 'Animate'], ['Copyright', 'Copyright'], ['Επικοινωνία', 'Contact'] ]"
         @clickDownload="download"
         @clickAnimate="toggleAnimate"
         @clickCopyright="openCopyright"
@@ -79,6 +100,7 @@
     align-items center
     > *
       margin-right 15px
+      height 40px
       &:last-child
         margin-right 0
   .zoom
@@ -92,17 +114,17 @@
   &.darkmode
     background black
 
-.mode-switch-small
+.step-interpret-small
   display none
-@media (max-width 900px)
-  .mode-switch
+@media (max-width 940px)
+  .step-interpret
     display none
-  .mode-switch-small
+  .step-interpret-small
     display block
 
 .logo-small
   display none
-@media (max-width 750px)
+@media (max-width 795px)
   .logo-regular
     display none
   .logo-small
@@ -110,10 +132,15 @@
 
 .interpret-small
   display none
-@media (max-width 600px)
+@media (max-width 670px)
+  .more-options
+  .fullscreen
+    display none
+@media (max-width 550px)
   .interpret
   .mode-switch
-  .mode-switch-small
+  .step-interpret
+  .step-interpret-small
   .input-file
   .more-options
   .fullscreen
@@ -149,10 +176,13 @@ import store from '../store';
 })
 export default class Header extends Vue {
   @Prop() interpreting!: boolean;
+  @Prop() stepInterpreting!: boolean;
   @Prop() animating!: boolean;
   @Prop() fullscreen!: boolean;
   @Prop() darkmode!: boolean;
   @Prop() actionBeingPerformed!: boolean;
+  @Prop() lastStep!: boolean;
+
   showInputFile = false;
 
   toggleInputFile() {
@@ -173,6 +203,30 @@ export default class Header extends Vue {
 
   @Emit('interpret')
   interpret() {}
+
+
+  stepFunction() {
+    if(this.lastStep) {
+      return this.stopStep()
+    } else if(!this.stepInterpreting) {
+      return this.stepInterpret();
+    } else this.nextStep();
+  }
+  @Emit('nextStep')
+  nextStep() {}
+  @Emit('stepInterpret')
+  stepInterpret() {}
+
+  stop() {
+    if(!this.lastStep) {
+      this.$emit('stop');
+    } else {
+      this.$emit('stopStep');
+    }
+  }
+
+  @Emit('stopStep')
+  stopStep() {}
 
   @Emit('toggleFullscreen')
   toggleFullscreen() {}

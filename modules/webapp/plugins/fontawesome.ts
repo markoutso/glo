@@ -13,6 +13,9 @@ import {
   faSearchPlus,
   faTimes,
   faFile,
+  faWalking,
+  faForward,
+  faStop,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
@@ -28,6 +31,9 @@ library.add(
   faSearchPlus,
   faTimes,
   faFile,
+  faWalking,
+  faForward,
+  faStop,
 );
 
 Vue.component('FontAwesomeIcon', FontAwesomeIcon);

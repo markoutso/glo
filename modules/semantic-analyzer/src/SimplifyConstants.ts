@@ -15,14 +15,25 @@ export default class SimplifyConstants extends AST.ASTVisitor<Types.GLODataType 
     this.visit(node.componentType);
     const dimensionLength = node.dimensionLength.map(this.visit.bind(this));
 
-    dimensionLength.forEach((len, i) => {
+    for (let i = 0; i < dimensionLength.length; i++) {
+      const len = dimensionLength[i];
+
       if (!len) {
         throw new GLOError(
           node.dimensionLength[i],
           `Περίμενα σταθερή έκφραση για διάσταση ${i + 1} του πίνακα`,
         );
       }
-    });
+
+      if (len instanceof Types.GLOInteger) {
+        node.dimensionLengthNumbers.push(len.serialize());
+      } else {
+        // If we do not push anything, there will be a mismatch
+        // of access parameters but pushing -1 when the argument
+        // is not an integer will let TypeChecker resolve this
+        node.dimensionLengthNumbers.push(-1);
+      }
+    }
 
     return null;
   }

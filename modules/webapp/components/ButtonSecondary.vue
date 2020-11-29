@@ -17,6 +17,8 @@
   outline none
   display flex
   flex-direction row
+  align-items center
+  justify-content center
   transition all .5s
   background white
   &.disabled
@@ -42,6 +44,13 @@
   color #28a745
   &.animate&:hover
     background #28a745
+    color white
+
+.green
+  border: 2px solid #dc3545
+  color #dc3545
+  &.animate&:hover
+    background #dc3545
     color white
 
 .black

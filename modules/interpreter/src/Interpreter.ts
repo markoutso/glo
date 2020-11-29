@@ -19,13 +19,22 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   constructor(
     protected readonly ast: AST.AST,
     baseScope: BaseSymbolScope,
-    private readonly helpers: {
+    private readonly options: {
       read: (lineNumber: number) => Promise<string[]>;
       write: (...data: string[]) => Promise<void>;
+      interceptor?: (node: AST.AST, scope: SymbolScope) => Promise<void>;
     },
   ) {
     super();
     this.scope = baseScope;
+  }
+
+  public async visit(node: AST.AST) {
+    if (this.options.interceptor) {
+      await this.options.interceptor(node, this.scope);
+    }
+
+    return super.visit(node);
   }
 
   private async withNewScope<T>(
@@ -75,6 +84,9 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
           `Ο δείκτης του πίνακα '${left.array.name}' πρέπει να είναι μεγαλύτερος ή ίσος του 1'`,
         );
 
+        // TODO: Fix this hack
+        const lP = dimensionLength[i].start.linePosition;
+        dimensionLength[i].start.linePosition = -1;
         assert(
           left.accessors[i],
           accessorValue.lessEqualsThan(await this.visit(dimensionLength[i])),
@@ -82,6 +94,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
             left.array.name
           }' έχει τιμή ${accessorValue.print()}, εκτός ορίων του πίνακα`,
         );
+        dimensionLength[i].start.linePosition = lP;
       }
 
       this.scope.changeArrayValue(left.array.name, accessorValues, newValue);
@@ -625,13 +638,13 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
       node.args.map(arg => this.visit(arg)),
     ).then(args => args.map(arg => arg.print()));
 
-    await this.helpers.write(...args);
+    await this.options.write(...args);
 
     return new Types.GLOVoid();
   }
 
   public async visitRead(node: AST.ReadAST) {
-    const readings = await this.helpers.read(node.start.linePosition);
+    const readings = await this.options.read(node.start.linePosition);
 
     const noInfoError = {
       start: {

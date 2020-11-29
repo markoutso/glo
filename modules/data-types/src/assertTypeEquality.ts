@@ -1,6 +1,10 @@
 import GLOError, { assertEquality, DebugInfoProvider } from '@glossa-glo/error';
 import { GLODataType, printType } from '.';
 
+function compareArrays(arr1: any[], arr2: any[]) {
+  return arr1.length === arr2.length && arr1.every((v, i) => v === arr2[i]);
+}
+
 export default function assertTypeEquality({
   node,
   left,
@@ -70,7 +74,10 @@ export default function assertTypeEquality({
   if (left.isArrayType && right.isArrayType) {
     if (
       (left as any).componentType === (right as any).componentType &&
-      (left as any).dimensionLength === (right as any).dimensionLength
+      compareArrays(
+        (left as any).dimensionLength,
+        (right as any).dimensionLength,
+      )
     ) {
       return {
         promoteLeft,

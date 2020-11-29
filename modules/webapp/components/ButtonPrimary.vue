@@ -17,6 +17,8 @@
   outline none
   display flex
   flex-direction row
+  align-items center
+  justify-content center
   transition all .3s
   &.disabled
     pointer-events none
@@ -41,6 +43,10 @@
 .green
   color white
   background #28a745
+
+.red
+  color white
+  background #dc3545
 </style>
 
 <script lang="ts">

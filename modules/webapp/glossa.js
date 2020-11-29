@@ -89,7 +89,6 @@ CodeMirror.defineMode('glossa', function() {
   function tokenComment(stream, state) {
     let ch;
     while ((ch = stream.next())) {
-      console.log('ch', ch, ch == '\n');
       if (ch == '\n') {
         state.tokenize = null;
         break;

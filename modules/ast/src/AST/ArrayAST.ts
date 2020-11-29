@@ -3,6 +3,8 @@ import { createGLOArray, GLODataType } from '@glossa-glo/data-types';
 import AST from './AST';
 
 export default class ArrayAST extends TypeAST {
+  public dimensionLengthNumbers: number[] = []; // Filled by SimplifyConstants
+
   get dataType() {
     if (!this.componentType.dataType) {
       throw new Error(
@@ -10,9 +12,15 @@ export default class ArrayAST extends TypeAST {
       );
     }
 
+    if (this.dimensionLengthNumbers.length !== this.dimensionLength.length) {
+      throw new Error(
+        'Program error: Could not calculate ArrayAST data type: dimension length numbers not filled',
+      );
+    }
+
     return createGLOArray(
       this.componentType.dataType,
-      this.dimensionLength.length,
+      this.dimensionLengthNumbers,
     );
   }
 
