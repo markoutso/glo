@@ -1,6 +1,6 @@
 {
   "name": "@glossa-glo/glo",
-  "version": "1.4.0-beta",
+  "version": "2.0.0-beta",
   "description": "Glo library",
   "author": "komninoschat <komninoschat@gmail.com>",
   "homepage": "https://github.com/komninoschat/glo#readme",
@@ -29,14 +29,14 @@
     "url": "https://github.com/komninoschat/glo/issues"
   },
   "dependencies": {
-    "@glossa-glo/ast": "^1.4.0-beta",
+    "@glossa-glo/ast": "^2.0.0-beta",
     "@glossa-glo/error": "^1.0.2-beta",
-    "@glossa-glo/interpreter": "^1.4.0-beta",
-    "@glossa-glo/lexer": "^1.4.0-beta",
-    "@glossa-glo/library": "^1.4.0-beta",
-    "@glossa-glo/parser": "^1.4.0-beta",
-    "@glossa-glo/semantic-analyzer": "^1.4.0-beta",
-    "@glossa-glo/symbol": "^1.4.0-beta"
+    "@glossa-glo/interpreter": "^2.0.0-beta",
+    "@glossa-glo/lexer": "^2.0.0-beta",
+    "@glossa-glo/library": "^2.0.0-beta",
+    "@glossa-glo/parser": "^2.0.0-beta",
+    "@glossa-glo/semantic-analyzer": "^2.0.0-beta",
+    "@glossa-glo/symbol": "^2.0.0-beta"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",
