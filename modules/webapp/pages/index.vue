@@ -287,7 +287,7 @@ export default class InterpreterPage extends Vue {
     URL.revokeObjectURL(url);
   }
 
-  consoleNewLine(message: string, type?: 'error'|'info'|'read') {
+  consoleNewLine(message: string, type?: 'program-error'|'error'|'info'|'read') {
     let str;
     if(!type) {
       str = `<div>${message}</div>`
@@ -297,6 +297,8 @@ export default class InterpreterPage extends Vue {
       str = `<div class="read">${message}</div>`;
     } else if(type === 'error') {
       str = `<div class="error">Σφάλμα: ${message}</div>`;
+    } else if(type === 'program-error') {
+      str = `<div class="error">Σφάλμα Διερμηνευτή: ${message}</div>`;
     }
 
     this.console.push(str);
@@ -402,6 +404,9 @@ export default class InterpreterPage extends Vue {
           error.end.characterPosition !== -1
         )
           this.highlightError(error);
+      } else {
+        this.consoleNewLine(_error, 'program-error');
+        throw _error;
       }
     }
 
