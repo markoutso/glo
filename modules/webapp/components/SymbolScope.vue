@@ -4,20 +4,22 @@
       span Όνομα εμβέλειας: 
       span.name {{ scope.name }}
     div
-    .title Σταθερες:
-    .grid
-      .cv-display(v-for="constant in constants")
-        .name {{ constant.name }}
-        .type {{ constant.type }}
-        .value {{ constant.value }}
-    .title Μεταβλητες:
-    .grid
-      .cv-display(v-for="variable in variables")
-        .name {{ variable.name }}
-        .type {{ variable.type }}
-        .value.table(v-if="Array.isArray(variable.value)" @click="selectArray(variable)") Προβολή
-        .value(v-else-if="variable.value !== undefined") {{ variable.value }}
-        .value.no-value(v-else)
+    .constants(v-if="constants && constants.length")
+      .title Σταθερες:
+      .grid
+        .cv-display(v-for="constant in constants")
+          .name {{ constant.name }}
+          .type {{ constant.type }}
+          .value {{ constant.value }}
+    .variables(v-if="variables && variables.length")
+      .title Μεταβλητες:
+      .grid
+        .cv-display(v-for="variable in variables")
+          .name {{ variable.name }}
+          .type {{ variable.type }}
+          .value.table(v-if="Array.isArray(variable.value)" @click="selectArray(variable)") Προβολή
+          .value(v-else-if="variable.value !== undefined") {{ variable.value }}
+          .value.no-value(v-else) &nbsp;
     Popup(
       v-if="selectedArray"
       @close="closePopup"
@@ -36,6 +38,7 @@
   background white
   padding 20px 12px
   border-left 1px solid rgba(65,65,65,0.5)
+  overflow-y scroll
   .scope-name
     margin-bottom 20px
     .name
@@ -78,6 +81,8 @@
   &.darkmode
     background black
     color #f8f8ff
+    .cv-display
+      border 1px solid rgba(190,190,190,0.5)
     .value.no-value
       background #3d3d3d
 </style>
