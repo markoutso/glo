@@ -41,16 +41,6 @@ const config: Configuration = {
         config.devtool = ctx.isClient ? 'source-map' : 'inline-source-map';
       }
     },
-    babel: {
-      presets: [
-        [
-          '@babel/preset-env',
-          {
-            targets: 'last 2 versions, not IE > 0, not IE_Mob > 0, > 0.4%',
-          },
-        ],
-      ],
-    },
   },
 };
 
