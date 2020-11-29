@@ -15,7 +15,7 @@ textarea
   resize none
   height 200px
   width 300px
-  font-family 'Roboto Mono' monospace;
+  font-size 16px
   border-radius 5px
 .btn
   margin 15px auto 0 auto
