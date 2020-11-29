@@ -118,16 +118,24 @@ empty
   :
   ;
 
-expression:
-  : term (("=" | "<>" | "<" | ">" | "<=" | ">=") expression)?
+expression
+  : and ("Η" expression)?
+  ;
+
+and:
+  : comparison ("ΚΑΙ" and)?
+  ;
+
+comparison:
+  : term (("=" | "<>" | "<" | ">" | "<=" | ">=") comparison)?
   ;
 
 term
-  : factor (("+" | "-" | "H") term)?
+  : factor (("+" | "-") term)?
   ;
 
 factor
-  : power (("*" | "div" | "/" | "MOD" | "ΚΑΙ") factor)?
+  : power (("*" | "div" | "/" | "MOD") factor)?
   ;
 
 power

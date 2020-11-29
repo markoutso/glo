@@ -1054,40 +1054,68 @@ export class Parser {
     return new AST.EmptyAST();
   }
 
-  private expression() {
+  private expression(): AST.AST {
+    const and = this.and();
+
+    if (this.currentToken instanceof Lexer.OrToken) {
+      const orToken = Object.assign({}, this.currentToken);
+
+      this.currentToken = this.eat(Lexer.OrToken);
+
+      return new AST.OrAST(and, this.expression()).inheritPositionFrom(orToken);
+    }
+
+    return and;
+  }
+
+  private and(): AST.AST {
+    const comp = this.comparison();
+
+    if (this.currentToken instanceof Lexer.AndToken) {
+      const andToken = Object.assign({}, this.currentToken);
+
+      this.currentToken = this.eat(Lexer.AndToken);
+
+      return new AST.AndAST(comp, this.and()).inheritPositionFrom(andToken);
+    }
+
+    return comp;
+  }
+
+  private comparison() {
     let node = this.term();
     const savedToken = Object.assign({}, this.currentToken);
 
     if (this.currentToken instanceof Lexer.EqualsToken) {
       this.currentToken = this.eat(Lexer.EqualsToken);
-      node = new AST.EqualsAST(node, this.expression()).inheritPositionFrom(
+      node = new AST.EqualsAST(node, this.comparison()).inheritPositionFrom(
         savedToken,
       );
     } else if (this.currentToken instanceof Lexer.NotEqualsToken) {
       this.currentToken = this.eat(Lexer.NotEqualsToken);
-      node = new AST.NotEqualsAST(node, this.expression()).inheritPositionFrom(
+      node = new AST.NotEqualsAST(node, this.comparison()).inheritPositionFrom(
         savedToken,
       );
     } else if (this.currentToken instanceof Lexer.GreaterThanToken) {
       this.currentToken = this.eat(Lexer.GreaterThanToken);
       node = new AST.GreaterThanAST(
         node,
-        this.expression(),
+        this.comparison(),
       ).inheritPositionFrom(savedToken);
     } else if (this.currentToken instanceof Lexer.LessThanToken) {
       this.currentToken = this.eat(Lexer.LessThanToken);
-      node = new AST.LessThanAST(node, this.expression()).inheritPositionFrom(
+      node = new AST.LessThanAST(node, this.comparison()).inheritPositionFrom(
         savedToken,
       );
     } else if (this.currentToken instanceof Lexer.GreaterEqualsToken) {
       this.currentToken = this.eat(Lexer.GreaterEqualsToken);
       node = new AST.GreaterEqualsAST(
         node,
-        this.expression(),
+        this.comparison(),
       ).inheritPositionFrom(savedToken);
     } else if (this.currentToken instanceof Lexer.LessEqualsToken) {
       this.currentToken = this.eat(Lexer.LessEqualsToken);
-      node = new AST.LessEqualsAST(node, this.expression()).inheritPositionFrom(
+      node = new AST.LessEqualsAST(node, this.comparison()).inheritPositionFrom(
         savedToken,
       );
     }
@@ -1107,9 +1135,6 @@ export class Parser {
       node = new AST.MinusAST(node, this.term()).inheritPositionFrom(
         savedToken,
       );
-    } else if (this.currentToken instanceof Lexer.OrToken) {
-      this.currentToken = this.eat(Lexer.OrToken);
-      node = new AST.OrAST(node, this.term()).inheritPositionFrom(savedToken);
     }
 
     return node;
@@ -1138,11 +1163,6 @@ export class Parser {
     } else if (this.currentToken instanceof Lexer.ModToken) {
       this.currentToken = this.eat(Lexer.ModToken);
       node = new AST.ModAST(node, this.factor()).inheritPositionFrom(
-        savedToken,
-      );
-    } else if (this.currentToken instanceof Lexer.AndToken) {
-      this.currentToken = this.eat(Lexer.AndToken);
-      node = new AST.AndAST(node, this.factor()).inheritPositionFrom(
         savedToken,
       );
     }
