@@ -404,9 +404,8 @@ export default class InterpreterPage extends Vue {
           error.end.characterPosition !== -1
         )
           this.highlightError(error);
-      } else {
+      } else if(_error) {
         this.consoleNewLine(_error, 'program-error');
-        throw _error;
       }
     }
 
