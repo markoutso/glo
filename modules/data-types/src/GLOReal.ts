@@ -1,12 +1,21 @@
 import GLODataType from './GLODataType';
 
 export default class GLOReal extends GLODataType {
-  constructor(public readonly value: number) {
+  public static readonly PRECISION = 2;
+  public internalValue: string;
+
+  public get value() {
+    return parseFloat(this.internalValue);
+  }
+
+  constructor(value: number) {
     super();
+    // Hack to avoid toFixed rounding: Add one more digit and remove after string conversion
+    this.internalValue = value.toFixed(GLOReal.PRECISION + 1).slice(0, -1);
   }
 
   public print(): string {
-    return this.value.toString();
+    return this.internalValue;
   }
 
   public add(right: GLOReal): GLOReal {
