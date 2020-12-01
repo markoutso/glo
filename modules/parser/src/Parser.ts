@@ -502,6 +502,15 @@ export class Parser {
         true,
       );
 
+      if (!(this.currentToken instanceof Lexer.VariableToken)) {
+        throw new GLOError(
+          !(this.currentToken instanceof Lexer.NewLineToken)
+            ? this.currentToken
+            : this.previousToken!,
+          'Περίμενα όνομα μεταβλητής μετά από άνω-κάτω τελεία',
+        );
+      }
+
       const ids = [variableOrArrayDeclaration(type)];
 
       while (this.currentToken instanceof Lexer.CommaToken) {
