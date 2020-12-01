@@ -54,6 +54,7 @@
       border-left 50px solid @background
       border-right @border-left
       .title
+      .close
         color white
       textarea
         background black
