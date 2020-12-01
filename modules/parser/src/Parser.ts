@@ -502,7 +502,7 @@ export class Parser {
         true,
       );
 
-      if (!(this.currentToken instanceof Lexer.VariableToken)) {
+      if (!(this.currentToken instanceof Lexer.IdToken)) {
         throw new GLOError(
           !(this.currentToken instanceof Lexer.NewLineToken)
             ? this.currentToken
