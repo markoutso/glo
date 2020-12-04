@@ -820,7 +820,7 @@ export default class TypeChecker extends AST.ASTVisitor<
 
     node.args.forEach(arg => {
       const argType = this.visit(arg);
-      if (!Types.canBeUsedInIO(argType)) {
+      if (!Types.canBeRead(argType)) {
         throw new GLOError(
           arg,
           `Δεν μπορώ να διαβάσω μεταβλητή με τύπο ${Types.printType(argType)}`,
@@ -841,7 +841,7 @@ export default class TypeChecker extends AST.ASTVisitor<
 
     node.args.forEach(arg => {
       const argType = this.visit(arg);
-      if (!Types.canBeUsedInIO(argType)) {
+      if (!Types.canBeWritten(argType)) {
         throw new GLOError(
           arg,
           `Δεν μπορώ να γράψω μεταβλητή με τύπο ${Types.printType(argType)}`,
