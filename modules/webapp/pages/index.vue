@@ -42,7 +42,11 @@
       .placeholder(
         v-show="(!console || !console.length) && !readFunction"
       ) Κονσόλα εισόδου/εξόδου
-      li(v-for="item in console" v-html="item")
+      li(
+        :style="{'min-height': fontSize}"
+        v-for="item in console"
+        v-html="item"
+      )
       input.read-input(
         rf="readInput"
         v-model="read"
