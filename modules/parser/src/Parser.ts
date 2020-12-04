@@ -1064,132 +1064,162 @@ export class Parser {
   }
 
   private expression(): AST.AST {
-    const and = this.and();
+    let current = this.and();
 
-    if (this.currentToken instanceof Lexer.OrToken) {
+    while (this.currentToken instanceof Lexer.OrToken) {
       const orToken = Object.assign({}, this.currentToken);
 
       this.currentToken = this.eat(Lexer.OrToken);
 
-      return new AST.OrAST(and, this.expression()).inheritPositionFrom(orToken);
+      current = new AST.OrAST(current, this.and()).inheritPositionFrom(orToken);
     }
 
-    return and;
+    return current;
   }
 
   private and(): AST.AST {
-    const comp = this.comparison();
+    let current = this.comparison();
 
-    if (this.currentToken instanceof Lexer.AndToken) {
+    while (this.currentToken instanceof Lexer.AndToken) {
       const andToken = Object.assign({}, this.currentToken);
 
       this.currentToken = this.eat(Lexer.AndToken);
 
-      return new AST.AndAST(comp, this.and()).inheritPositionFrom(andToken);
+      current = new AST.AndAST(current, this.comparison()).inheritPositionFrom(
+        andToken,
+      );
     }
 
-    return comp;
+    return current;
   }
 
   private comparison() {
-    let node = this.term();
+    let current = this.term();
     const savedToken = Object.assign({}, this.currentToken);
 
-    if (this.currentToken instanceof Lexer.EqualsToken) {
-      this.currentToken = this.eat(Lexer.EqualsToken);
-      node = new AST.EqualsAST(node, this.comparison()).inheritPositionFrom(
-        savedToken,
-      );
-    } else if (this.currentToken instanceof Lexer.NotEqualsToken) {
-      this.currentToken = this.eat(Lexer.NotEqualsToken);
-      node = new AST.NotEqualsAST(node, this.comparison()).inheritPositionFrom(
-        savedToken,
-      );
-    } else if (this.currentToken instanceof Lexer.GreaterThanToken) {
-      this.currentToken = this.eat(Lexer.GreaterThanToken);
-      node = new AST.GreaterThanAST(
-        node,
-        this.comparison(),
-      ).inheritPositionFrom(savedToken);
-    } else if (this.currentToken instanceof Lexer.LessThanToken) {
-      this.currentToken = this.eat(Lexer.LessThanToken);
-      node = new AST.LessThanAST(node, this.comparison()).inheritPositionFrom(
-        savedToken,
-      );
-    } else if (this.currentToken instanceof Lexer.GreaterEqualsToken) {
-      this.currentToken = this.eat(Lexer.GreaterEqualsToken);
-      node = new AST.GreaterEqualsAST(
-        node,
-        this.comparison(),
-      ).inheritPositionFrom(savedToken);
-    } else if (this.currentToken instanceof Lexer.LessEqualsToken) {
-      this.currentToken = this.eat(Lexer.LessEqualsToken);
-      node = new AST.LessEqualsAST(node, this.comparison()).inheritPositionFrom(
-        savedToken,
-      );
+    while (
+      this.currentToken instanceof Lexer.EqualsToken ||
+      this.currentToken instanceof Lexer.NotEqualsToken ||
+      this.currentToken instanceof Lexer.GreaterThanToken ||
+      this.currentToken instanceof Lexer.LessThanToken ||
+      this.currentToken instanceof Lexer.GreaterEqualsToken ||
+      this.currentToken instanceof Lexer.LessEqualsToken
+    ) {
+      if (this.currentToken instanceof Lexer.EqualsToken) {
+        this.currentToken = this.eat(Lexer.EqualsToken);
+        current = new AST.EqualsAST(current, this.term()).inheritPositionFrom(
+          savedToken,
+        );
+      } else if (this.currentToken instanceof Lexer.NotEqualsToken) {
+        this.currentToken = this.eat(Lexer.NotEqualsToken);
+        current = new AST.NotEqualsAST(
+          current,
+          this.term(),
+        ).inheritPositionFrom(savedToken);
+      } else if (this.currentToken instanceof Lexer.GreaterThanToken) {
+        this.currentToken = this.eat(Lexer.GreaterThanToken);
+        current = new AST.GreaterThanAST(
+          current,
+          this.term(),
+        ).inheritPositionFrom(savedToken);
+      } else if (this.currentToken instanceof Lexer.LessThanToken) {
+        this.currentToken = this.eat(Lexer.LessThanToken);
+        current = new AST.LessThanAST(current, this.term()).inheritPositionFrom(
+          savedToken,
+        );
+      } else if (this.currentToken instanceof Lexer.GreaterEqualsToken) {
+        this.currentToken = this.eat(Lexer.GreaterEqualsToken);
+        current = new AST.GreaterEqualsAST(
+          current,
+          this.term(),
+        ).inheritPositionFrom(savedToken);
+      } else if (this.currentToken instanceof Lexer.LessEqualsToken) {
+        this.currentToken = this.eat(Lexer.LessEqualsToken);
+        current = new AST.LessEqualsAST(
+          current,
+          this.term(),
+        ).inheritPositionFrom(savedToken);
+      }
     }
-
-    return node;
+    return current;
   }
 
   private term() {
-    let node = this.factor();
+    let current = this.factor();
     const savedToken = Object.assign({}, this.currentToken);
 
-    if (this.currentToken instanceof Lexer.PlusToken) {
-      this.currentToken = this.eat(Lexer.PlusToken);
-      node = new AST.PlusAST(node, this.term()).inheritPositionFrom(savedToken);
-    } else if (this.currentToken instanceof Lexer.MinusToken) {
-      this.currentToken = this.eat(Lexer.MinusToken);
-      node = new AST.MinusAST(node, this.term()).inheritPositionFrom(
-        savedToken,
-      );
+    while (
+      this.currentToken instanceof Lexer.PlusToken ||
+      this.currentToken instanceof Lexer.MinusToken
+    ) {
+      if (this.currentToken instanceof Lexer.PlusToken) {
+        this.currentToken = this.eat(Lexer.PlusToken);
+        current = new AST.PlusAST(current, this.factor()).inheritPositionFrom(
+          savedToken,
+        );
+      } else if (this.currentToken instanceof Lexer.MinusToken) {
+        this.currentToken = this.eat(Lexer.MinusToken);
+        current = new AST.MinusAST(current, this.factor()).inheritPositionFrom(
+          savedToken,
+        );
+      }
     }
 
-    return node;
+    return current;
   }
 
   private factor() {
-    let node = this.power();
+    let current = this.power();
     const savedToken = Object.assign({}, this.currentToken);
 
-    if (this.currentToken instanceof Lexer.MultiplicationToken) {
-      this.currentToken = this.eat(Lexer.MultiplicationToken);
-      node = new AST.MultiplicationAST(node, this.factor()).inheritPositionFrom(
-        savedToken,
-      );
-    } else if (this.currentToken instanceof Lexer.IntegerDivisionToken) {
-      this.currentToken = this.eat(Lexer.IntegerDivisionToken);
-      node = new AST.IntegerDivisionAST(
-        node,
-        this.factor(),
-      ).inheritPositionFrom(savedToken);
-    } else if (this.currentToken instanceof Lexer.RealDivisionToken) {
-      this.currentToken = this.eat(Lexer.RealDivisionToken);
-      node = new AST.RealDivisionAST(node, this.factor()).inheritPositionFrom(
-        savedToken,
-      );
-    } else if (this.currentToken instanceof Lexer.ModToken) {
-      this.currentToken = this.eat(Lexer.ModToken);
-      node = new AST.ModAST(node, this.factor()).inheritPositionFrom(
-        savedToken,
-      );
+    while (
+      this.currentToken instanceof Lexer.MultiplicationToken ||
+      this.currentToken instanceof Lexer.IntegerDivisionToken ||
+      this.currentToken instanceof Lexer.RealDivisionToken ||
+      this.currentToken instanceof Lexer.ModToken
+    ) {
+      if (this.currentToken instanceof Lexer.MultiplicationToken) {
+        this.currentToken = this.eat(Lexer.MultiplicationToken);
+        current = new AST.MultiplicationAST(
+          current,
+          this.power(),
+        ).inheritPositionFrom(savedToken);
+      } else if (this.currentToken instanceof Lexer.IntegerDivisionToken) {
+        this.currentToken = this.eat(Lexer.IntegerDivisionToken);
+        current = new AST.IntegerDivisionAST(
+          current,
+          this.power(),
+        ).inheritPositionFrom(savedToken);
+      } else if (this.currentToken instanceof Lexer.RealDivisionToken) {
+        this.currentToken = this.eat(Lexer.RealDivisionToken);
+        current = new AST.RealDivisionAST(
+          current,
+          this.power(),
+        ).inheritPositionFrom(savedToken);
+      } else if (this.currentToken instanceof Lexer.ModToken) {
+        this.currentToken = this.eat(Lexer.ModToken);
+        current = new AST.ModAST(current, this.power()).inheritPositionFrom(
+          savedToken,
+        );
+      }
     }
 
-    return node;
+    return current;
   }
 
   private power(): AST.AST {
-    const atom = this.atom();
-    if (this.currentToken instanceof Lexer.ExponentiationToken) {
+    let current = this.atom();
+
+    while (this.currentToken instanceof Lexer.ExponentiationToken) {
       const exponentiationToken = Object.assign({}, this.currentToken);
       this.currentToken = this.eat(Lexer.ExponentiationToken);
-      return new AST.ExponentiationAST(atom, this.power()).inheritPositionFrom(
-        exponentiationToken,
-      );
-    } else {
-      return atom;
+      current = new AST.ExponentiationAST(
+        current,
+        this.atom(),
+      ).inheritPositionFrom(exponentiationToken);
     }
+
+    return current;
   }
 
   private atom(): AST.AST {

@@ -308,7 +308,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
           );
         }
 
-        // Register parameter values
+        // Copy in parameter values
         node.args
           // Filter uninitialized variables
           .filter((arg, i) => !(args[i] instanceof Types.GLOVoid))
@@ -328,8 +328,9 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
           await this.visit(node.statementList[i]);
         }
 
-        // Rewrite parameter values in parent scope
-        node.args.forEach((arg, i) => {
+        // Copy out parameter values in parent scope
+        for (let i = node.args.length - 1; i >= 0; i--) {
+          const arg = node.args[i];
           const currentRewrite = rewrite[i];
 
           if (currentRewrite) {
@@ -350,7 +351,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
                 );
             }
           }
-        });
+        }
       });
     });
 
@@ -682,18 +683,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
       const expectedType = variableTypes[i];
       const name = argNames[i];
 
-      if (expectedType === Types.GLOBoolean) {
-        if (toUpperCaseNormalizedGreek(str) === 'ΑΛΗΘΗΣ') {
-          return new Types.GLOBoolean(true);
-        } else if (toUpperCaseNormalizedGreek(str) === 'ΨΕΥΔΗΣ') {
-          return new Types.GLOBoolean(false);
-        } else {
-          throw new GLOError(
-            noInfoError,
-            `Περίμενα να διαβάσω λογική τιμή(ΑΛΗΘΗΣ ή ΨΕΥΔΗΣ) στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη λογική τιμή '${str}'`,
-          );
-        }
-      } else if (expectedType === Types.GLOReal) {
+      if (expectedType === Types.GLOReal) {
         if (/^[+-]?\d+(\.\d+)*$/.test(str)) {
           return new Types.GLOReal(parseFloat(str));
         } else {

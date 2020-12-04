@@ -12,7 +12,7 @@ import createGLOArray, { isGLOArray, GLOArrayLike } from './GLOArray';
 import createGLOMultitype from './GLOMultitype';
 import GLOFunction from './GLOFunction';
 import GLOSubrange from './GLOSubrange';
-import canBeUsedInIO from './canBeUsedInIO';
+import { canBeRead, canBeWritten } from './canBeUsedInIO';
 import assertTypeEquality from './assertTypeEquality';
 
 export {
@@ -32,6 +32,7 @@ export {
   createGLOMultitype,
   GLOFunction,
   GLOSubrange,
-  canBeUsedInIO,
+  canBeRead,
+  canBeWritten,
   assertTypeEquality,
 };

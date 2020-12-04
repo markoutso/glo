@@ -119,27 +119,27 @@ empty
   ;
 
 expression
-  : and ("Η" expression)?
+  : and ("Η" and)*
   ;
 
 and:
-  : comparison ("ΚΑΙ" and)?
+  : comparison ("ΚΑΙ" comparison)*
   ;
 
 comparison:
-  : term (("=" | "<>" | "<" | ">" | "<=" | ">=") comparison)?
+  : term (("=" | "<>" | "<" | ">" | "<=" | ">=") term)*
   ;
 
 term
-  : factor (("+" | "-") term)?
+  : factor (("+" | "-") factor)*
   ;
 
 factor
-  : power (("*" | "div" | "/" | "MOD") factor)?
+  : power (("*" | "div" | "/" | "MOD") power)*
   ;
 
 power
-  : atom ("^" power)?
+  : atom ("^" atom)*
   ;
 
 atom

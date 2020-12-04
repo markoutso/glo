@@ -15,5 +15,10 @@ export default class IfAST extends AST {
       throw new Error('Cannot add next if node more than once');
     }
     this.next = next;
+    if (Array.isArray(next)) {
+      for (let i = 0; i < next.length; i++) {
+        this.addChild(next[i]);
+      }
+    } else this.addChild(next);
   }
 }

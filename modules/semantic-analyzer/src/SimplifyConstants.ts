@@ -1,14 +1,27 @@
 import * as AST from '@glossa-glo/ast';
 import GLOError from '@glossa-glo/error';
 import * as Types from '@glossa-glo/data-types';
-import { BaseSymbolScope } from '@glossa-glo/symbol';
+import {
+  BaseSymbolScope,
+  LocalSymbolScope,
+  SymbolScopeType,
+  VariableSymbol,
+} from '@glossa-glo/symbol';
 
 export default class SimplifyConstants extends AST.ASTVisitor<Types.GLODataType | null> {
+  private localScope: LocalSymbolScope | null = null;
+
   constructor(
     protected readonly ast: AST.AST,
     private readonly baseScope: BaseSymbolScope,
   ) {
     super();
+  }
+
+  private withLocalScope(name: string, type: SymbolScopeType, fn: Function) {
+    this.localScope = new LocalSymbolScope(name, type, this.baseScope);
+    fn();
+    this.localScope = null;
   }
 
   public visitArray(node: AST.ArrayAST) {
@@ -51,17 +64,33 @@ export default class SimplifyConstants extends AST.ASTVisitor<Types.GLODataType 
       );
     }
 
+    if (this.localScope) {
+      this.localScope.insert(
+        new VariableSymbol(
+          node.variable.name,
+          value.constructor as typeof Types.GLODataType,
+          true,
+        ),
+      );
+      this.localScope.changeValue(node.variable.name, value);
+    }
+
     return null;
   }
 
   public visitVariable(node: AST.VariableAST) {
-    node.children.forEach(this.visit.bind(this));
-    return null;
+    // We only enter constants on scopes
+    if (this.localScope && this.localScope.resolveValue(node.name)) {
+      return this.localScope.resolveValue(node.name);
+    } else return null;
   }
 
   public visitProgram(node: AST.ProgramAST) {
-    node.declarations.forEach(this.visit.bind(this));
-    node.statementList.forEach(this.visit.bind(this));
+    this.withLocalScope(node.name, SymbolScopeType.Program, () => {
+      node.declarations.forEach(this.visit.bind(this));
+      node.statementList.forEach(this.visit.bind(this));
+    });
+
     return null;
   }
 
@@ -71,12 +100,16 @@ export default class SimplifyConstants extends AST.ASTVisitor<Types.GLODataType 
   }
 
   public visitProcedureDeclaration(node: AST.ProcedureDeclarationAST) {
-    node.children.forEach(this.visit.bind(this));
+    this.withLocalScope(node.name.name, SymbolScopeType.Procedure, () => {
+      node.children.forEach(this.visit.bind(this));
+    });
     return null;
   }
 
   public visitFunctionDeclaration(node: AST.FunctionDeclarationAST) {
-    node.children.forEach(this.visit.bind(this));
+    this.withLocalScope(node.name.name, SymbolScopeType.Function, () => {
+      node.children.forEach(this.visit.bind(this));
+    });
     return null;
   }
 
