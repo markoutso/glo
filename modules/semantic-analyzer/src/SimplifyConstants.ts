@@ -115,7 +115,11 @@ export default class SimplifyConstants extends AST.ASTVisitor<Types.GLODataType 
 
   public visitFunctionCall(node: AST.FunctionCallAST) {
     const args = node.args.map(arg => this.visit(arg));
-    const func = this.baseScope.resolveValue<Types.GLOFunction>(node.name)!;
+    const func = this.baseScope.resolveValue<Types.GLOFunction>(node.name);
+
+    if (!func) {
+      return null;
+    }
 
     for (const arg of args) {
       if (arg === null) {
