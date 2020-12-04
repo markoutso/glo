@@ -1314,11 +1314,18 @@ export class Parser {
     const nameAST = this.variable();
     const name = nameAST.name;
 
-    this.currentToken = this.eat(Lexer.OpeningParenthesisToken);
+    this.currentToken = this.eat(
+      Lexer.OpeningParenthesisToken,
+      'Περίμενα άνοιγμα παρένθεσης μετά από όνομα διαδικασίας',
+      this.currentToken instanceof Lexer.NewLineToken,
+    );
 
     const args: AST.AST[] = [];
 
-    if (!(this.currentToken instanceof Lexer.ClosingParenthesisToken)) {
+    if (
+      !(this.currentToken instanceof Lexer.ClosingParenthesisToken) &&
+      !(this.currentToken instanceof Lexer.NewLineToken)
+    ) {
       args.push(this.expression());
 
       while (this.currentToken instanceof Lexer.CommaToken) {
@@ -1338,7 +1345,7 @@ export class Parser {
     this.currentToken = this.eat(
       Lexer.ClosingParenthesisToken,
       'Περίμενα κλείσιμο παρένθεσης μετά από παραμέτρους διαδικασίας',
-      true,
+      this.currentToken instanceof Lexer.NewLineToken,
     );
 
     return new AST.ProcedureCallAST(name, args).inheritPositionFrom(nameAST);

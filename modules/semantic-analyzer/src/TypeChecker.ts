@@ -656,10 +656,9 @@ export default class TypeChecker extends AST.ASTVisitor<
             .join('')}, αλλά έλαβα μη συμβατό τύπο ${Types.printType(arg)}`,
         );
       }
-
-      return overloads[mismatches.length].returnType;
     }
-    return Types.GLOVoid; // Make the compiler happy
+
+    return symbol.returnType;
   }
 
   public visitProcedureCall(node: AST.ProcedureCallAST) {
