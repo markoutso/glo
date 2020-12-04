@@ -544,7 +544,7 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       target.prototype.unaryMinus,
-      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέο τύπου ${Types.printType(
         target,
       )}`,
     );
@@ -558,7 +558,7 @@ export default class TypeChecker extends AST.ASTVisitor<
     assert(
       node,
       target.prototype.unaryPlus(),
-      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέους τύπου ${Types.printType(
+      `Δεν μπορώ να πραγματοποιήσω την πράξη με τελεστέο τύπου ${Types.printType(
         target,
       )}`,
     );
