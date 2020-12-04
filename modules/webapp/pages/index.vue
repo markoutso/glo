@@ -291,7 +291,7 @@ export default class InterpreterPage extends Vue {
     URL.revokeObjectURL(url);
   }
 
-  consoleNewLine(message: string, type?: 'program-error'|'error'|'info'|'read') {
+  consoleNewLine(message: string, type?: 'program-error'|'error'|'info'|'read', line?: number) {
     let str;
     if(!type) {
       str = `<div>${message}</div>`
@@ -300,7 +300,7 @@ export default class InterpreterPage extends Vue {
     } else if(type === 'read') {
       str = `<div class="read">${message}</div>`;
     } else if(type === 'error') {
-      str = `<div class="error">Σφάλμα: ${message}</div>`;
+      str = `<div class="error">${line ? `Γραμμή ${line}: ` : ''}Σφάλμα: ${message}</div>`;
     } else if(type === 'program-error') {
       str = `<div class="error">Σφάλμα Διερμηνευτή: ${message}</div>`;
     }
@@ -399,14 +399,14 @@ export default class InterpreterPage extends Vue {
     } catch (_error) {
       if (_error instanceof GLOError) {
         let error = _error as GLOError;
-
-        this.consoleNewLine(error.message, 'error');
-        if (
+        const canEvalLine =
           // error.start.linePosition === error.end.linePosition &&
           error.start.linePosition !== -1 &&
           error.start.characterPosition !== -1 &&
-          error.end.characterPosition !== -1
-        )
+          error.end.characterPosition !== -1;
+
+        this.consoleNewLine(error.message, 'error', canEvalLine ? error.start.linePosition : undefined);
+        if (canEvalLine)
           this.highlightError(error);
       } else if(_error) {
         this.consoleNewLine(_error, 'program-error');
