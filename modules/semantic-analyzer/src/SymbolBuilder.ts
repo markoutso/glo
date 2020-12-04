@@ -13,6 +13,7 @@ import { ArrayAST, VariableAST } from '@glossa-glo/ast';
 
 export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | void> {
   private currentScope: SymbolScope;
+  private insideFunction = false;
 
   constructor(protected readonly ast: AST.AST, baseScope: BaseSymbolScope) {
     super();
@@ -194,7 +195,10 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
         ).inheritPositionFrom(node.name),
       );
 
+    this.insideFunction = true;
     node.statementList.forEach(this.visit.bind(this));
+    this.insideFunction = false;
+
     this.currentScope = this.currentScope.getParent()!;
   }
 
@@ -236,6 +240,13 @@ export default class SymbolBuilder extends AST.ASTVisitor<GLOSymbol.GLOSymbol | 
   }
 
   public visitProcedureCall(node: AST.ProcedureCallAST) {
+    if (this.insideFunction) {
+      throw new GLOError(
+        node,
+        'Δεν επιτρέπεται κάλεσμα διαδικασίας μέσα σε συνάρτηση',
+      );
+    }
+
     node.args.forEach(this.visit.bind(this));
 
     const symbol = this.currentScope.resolve(node.name);
