@@ -1,0 +1,29 @@
+! Prints the first n fibonacci numbers
+ΠΡΟΓΡΑΜΜΑ fibonacci              ! PROGRAM fibonacci
+
+ΜΕΤΑΒΛΗΤΕΣ                       ! VARIABLES
+  ΑΚΕΡΑΙΕΣ: n, a1, a2, i, temp   ! INTEGERS: n, a1, a2, i, temp
+
+ΑΡΧΗ                             ! BEGIN
+  ΔΙΑΒΑΣΕ n                      ! READ n
+
+  a1 <- 1
+  a2 <- 1
+
+  ΑΝ n >= 1 ΤΟΤΕ                 ! IF n >= 1 THEN
+    ΓΡΑΨΕ a1                     ! WRITE a1
+  ΤΕΛΟΣ_ΑΝ                       ! END_IF
+
+  ΑΝ n >= 2 ΤΟΤΕ                 ! IF n >= 2 THEN
+    ΓΡΑΨΕ a2                     ! WRITE a2
+  ΤΕΛΟΣ_ΑΝ                       ! END_IF
+
+  ΑΝ n >= 3 ΤΟΤΕ                 ! IF n >= 3 THEN
+    ΓΙΑ i ΑΠΟ 3 ΜΕΧΡΙ n          ! FOR i FROM 3 TO n
+      temp <- a2
+      a2 <- a1 + a2
+      a1 <- temp
+      ΓΡΑΨΕ a2                   ! WRITE a2
+    ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ             ! END_LOOP
+  ΤΕΛΟΣ_ΑΝ                       ! END_IF
+ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ               ! END_PROGRAM
