@@ -16,7 +16,8 @@
     "typescript": "^3.6.2"
   },
   "scripts": {
-    "lint": "eslint ./**/*.ts"
+    "lint": "eslint ./**/*.ts",
+    "bootstrap": "lerna bootstrap"
   },
   "dependencies": {},
   "husky": {
