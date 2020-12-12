@@ -227,6 +227,28 @@ export default class InterpreterPage extends Vue {
     }, {className: 'error'});
   }
 
+  readHighlight: any = null;
+
+  clearReadHighlight() {
+    if(this.readHighlight) {
+      this.readHighlight.clear();
+      this.readHighlight = null;
+    }
+  }
+
+  highlightRead(debugInfoProvider: DebugInfoProviderLike) {
+    this.clearReadHighlight();
+    const cm = this.$refs.editor.codemirror;
+
+    this.readHighlight = cm.markText({
+      line: debugInfoProvider.start.linePosition,
+      ch: debugInfoProvider.start.characterPosition
+    },{
+      line: debugInfoProvider.end.linePosition,
+      ch: debugInfoProvider.end.characterPosition
+    }, {className: 'read'});
+  }
+
   highlightLine(line: number, type: 'read'|'step') {
     const cm = this.$refs.editor.codemirror;
 
@@ -246,7 +268,7 @@ export default class InterpreterPage extends Vue {
   stepInterpreting = false;
   lastStep = false;
   animating = false;
-  readFunction: ((values: string[], rejectPromise?: boolean) => void) | null = null;
+  readFunction: ((reading: string, rejectPromise?: boolean) => void) | null = null;
 
   get actionBeingPerformed() {
     return this.interpreting || this.stepInterpreting || this.lastStep || this.animating;
@@ -324,7 +346,7 @@ export default class InterpreterPage extends Vue {
   submitRead() {
     if (this.readFunction) {
       this.consoleNewLine(this.read, 'read');
-      this.readFunction(this.read ? this.read.split(' ') : []);
+      this.readFunction(this.read);
       this.read = '';
       this.readFunction = null;
     }
@@ -360,34 +382,34 @@ export default class InterpreterPage extends Vue {
         addMissingTrailingNewline(this.sourceCode),
         {
           ...options,
-          read: lineNumber => {
+          read: (debugInfoProvider: DebugInfoProviderLike) => {
             if(!store.inputFile) {
-              this.highlightLine(lineNumber, 'read');
+              this.highlightRead(debugInfoProvider);
               return new Promise((resolve,reject) => {
-                this.readFunction = (args: string[], resolvePromise = false) => {
-                  this.unhighlightLine(lineNumber, 'read');
+                this.readFunction = (reading: string, rejectPromise = false) => {
+                  console.log('read function called!', reading, rejectPromise)
+                  this.clearReadHighlight();
 
-                  if(resolvePromise) {
+                  if(rejectPromise) {
                     this.read = '';
                     this.readFunction = null;
                     return reject();
                   }
 
-                  return resolve(args);
+                  return resolve(reading);
                 };
               });
             } else {
               const indexOfFirstNewLine = localInputFile.indexOf('\n');
 
               if(indexOfFirstNewLine === -1) {
-                return Promise.resolve([]);
+                return Promise.resolve('');
               }
 
               const line = localInputFile.substring(0, indexOfFirstNewLine);
               this.consoleNewLine(line, 'read');
-              const results = line.split(' ')
               localInputFile = localInputFile.substring(indexOfFirstNewLine + 1)
-              return Promise.resolve(results);
+              return Promise.resolve(line);
             }
           },
           write: (...data) => {
@@ -498,7 +520,7 @@ export default class InterpreterPage extends Vue {
     }
 
     if(this.readFunction) {
-      this.readFunction([], true);
+      this.readFunction('', true);
     }
 
     if(this.stepInterpretFunction) {

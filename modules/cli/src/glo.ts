@@ -101,11 +101,7 @@ class Psi extends Command {
         read: () => {
           return new Promise((resolve, reject) => {
             rl.question('', data => {
-              if (data) {
-                resolve(data.split(' '));
-              } else {
-                resolve([]);
-              }
+              resolve(data);
             });
           });
         },

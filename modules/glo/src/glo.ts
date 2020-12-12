@@ -9,9 +9,10 @@ import {
 } from '@glossa-glo/semantic-analyzer';
 import { BaseSymbolScope, SymbolScope } from '@glossa-glo/symbol';
 import injectLibraryToScope from '@glossa-glo/library';
+import { DebugInfoProviderLike } from '@glossa-glo/error';
 
 export interface Options {
-  read: (linePosition: number) => Promise<string[]>;
+  read: (debugInfoProvider: DebugInfoProviderLike) => Promise<string>;
   write: (...data: string[]) => Promise<void>;
   interceptor?: (node: AST, scope: SymbolScope) => Promise<void>;
 }
