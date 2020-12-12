@@ -1,0 +1,38 @@
+! Prints all prime numbers in the range 1..n (max value of n is 10^5)
+ΠΡΟΓΡΑΜΜΑ primes                 ! PROGRAM fibonacci
+
+ΣΤΑΘΕΡΕΣ                         ! CONSTANTS
+  MAXN = 10^5
+
+ΜΕΤΑΒΛΗΤΕΣ                       ! VARIABLES
+  ΑΚΕΡΑΙΕΣ: n, i, j              ! INTEGERS: n, i, j
+  ΛΟΓΙΚΕΣ: p[MAXN]               ! BOOLEANS: p[MAXN]
+
+ΑΡΧΗ                             ! BEGIN
+  ΔΙΑΒΑΣΕ n                      ! READ n
+
+  ΟΣΟ n < 1 Η n > MAXN ΕΠΑΝΑΛΑΒΕ ! WHILE n < 1 OR n > MAXN REPEAT
+    ΓΡΑΨΕ 'Invalid value for n'  ! WRITE 'Invalid value for n'
+    ΔΙΑΒΑΣΕ n                    ! READ n
+  ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ               ! END_LOOP
+
+  ΓΙΑ i ΑΠΟ 1 ΜΕΧΡΙ n            ! FOR i FROM 1 TO n
+    p[i] <- ΑΛΗΘΗΣ               ! p[i] <- TRUE
+  ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ               ! END_LOOP
+
+  ΓΙΑ i ΑΠΟ 2 μέχρι n            ! FOR i FROM 2 TO n
+    ΑΝ p[i] ΤΟΤΕ                 ! IF p[i] THEN
+      j <- i^2
+      ΟΣΟ j <= n ΕΠΑΝΑΛΑΒΕ       ! WHILE j <= n REPEAT
+        p[j] <- ΨΕΥΔΗΣ           ! p[j] <- FALSE
+        j <- j + i
+      ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ           ! END_LOOP
+    ΤΕΛΟΣ_ΑΝ                     ! END_IF
+  ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ               ! END_LOOP
+
+  ΓΙΑ i ΑΠΟ 1 ΜΕΧΡΙ n            ! FOR i FROM 1 TO n
+    ΑΝ p[i] ΤΟΤΕ                 ! IF p[i] THEN
+      ΓΡΑΨΕ i                    ! WRITE i
+    ΤΕΛΟΣ_ΑΝ                     ! END_IF
+  ΤΕΛΟΣ_ΕΠΑΝΑΛΗΨΗΣ               ! END_LOOP
+ΤΕΛΟΣ_ΠΡΟΓΡΑΜΜΑΤΟΣ               ! END_PROGRAM

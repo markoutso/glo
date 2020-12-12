@@ -9,7 +9,11 @@ import {
   GLOSymbol,
 } from '@glossa-glo/symbol';
 import { IntegerConstantAST, VariableAST } from '@glossa-glo/ast';
-import GLOError, { assertEquality, assert } from '@glossa-glo/error';
+import GLOError, {
+  assertEquality,
+  assert,
+  DebugInfoProviderLike,
+} from '@glossa-glo/error';
 import { toUpperCaseNormalizedGreek } from '@glossa-glo/case-insensitive-map';
 import cloneDeep from 'clone-deep';
 
@@ -20,7 +24,7 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
     protected readonly ast: AST.AST,
     baseScope: BaseSymbolScope,
     private readonly options: {
-      read: (lineNumber: number) => Promise<string[]>;
+      read: (debugInfoProvider: DebugInfoProviderLike) => Promise<string>;
       write: (...data: string[]) => Promise<void>;
       interceptor?: (node: AST.AST, scope: SymbolScope) => Promise<void>;
     },
@@ -645,8 +649,6 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
   }
 
   public async visitRead(node: AST.ReadAST) {
-    const readings = await this.options.read(node.start.linePosition);
-
     const noInfoError = {
       start: {
         linePosition: -1,
@@ -658,17 +660,6 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
       },
     };
 
-    if (node.args.length !== readings.length) {
-      throw new GLOError(
-        noInfoError,
-        `Περίμενα να διαβάσω ${node.args.length} ${
-          node.args.length === 1 ? 'μεταβλητή' : 'μεταβλητές'
-        } αλλά μου ${readings.length === 1 ? 'δόθηκε' : 'δόθηκαν'} ${
-          readings.length
-        } ${readings.length === 1 ? 'μεταβλητή' : 'μεταβλητές'}`,
-      );
-    }
-
     const argNames = node.args.map(arg =>
       arg instanceof VariableAST ? arg.name : arg.array.name,
     );
@@ -679,36 +670,44 @@ export class Interpreter extends AST.ASTVisitor<Promise<Types.GLODataType>> {
             .componentType as typeof Types.GLODataType),
     );
 
-    const values = readings.map((str, i) => {
+    const values = [];
+
+    for (let i = 0; i < node.args.length; i++) {
+      const argNode = node.args[i];
+
       const expectedType = variableTypes[i];
       const name = argNames[i];
 
+      console.log('reading arg', (argNode as VariableAST).name);
+      const reading = await this.options.read(argNode);
+      console.log('read arg', (argNode as VariableAST).name, reading);
+
       if (expectedType === Types.GLOReal) {
-        if (/^[+-]?\d+(\.\d+)*$/.test(str)) {
-          return new Types.GLOReal(parseFloat(str));
+        if (/^[+-]?\d+(\.\d+)*$/.test(reading)) {
+          values.push(new Types.GLOReal(parseFloat(reading)));
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη πραγματική τιμή '${str}'`,
+            `Περίμενα να διαβάσω πραγματική τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη πραγματική τιμή '${reading}'`,
           );
         }
       } else if (expectedType === Types.GLOInteger) {
-        if (/^[+-]?\d+$/.test(str)) {
-          return new Types.GLOInteger(parseInt(str));
+        if (/^[+-]?\d+$/.test(reading)) {
+          values.push(new Types.GLOInteger(parseInt(reading)));
         } else {
           throw new GLOError(
             noInfoError,
-            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη ακέραια τιμή '${str}'`,
+            `Περίμενα να διαβάσω ακέραια τιμή στη μεταβλητή ${name} αλλά έλαβα μη έγκυρη ακέραια τιμή '${reading}'`,
           );
         }
       } else if (expectedType === Types.GLOString) {
-        return new Types.GLOString(str);
+        values.push(new Types.GLOString(reading));
       } else {
         throw new Error(
           `Invalid expected read type ${expectedType.constructor.name}`,
         );
       }
-    });
+    }
 
     for (let i = 0; i < node.args.length; i++) {
       const arg = node.args[i];
